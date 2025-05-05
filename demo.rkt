@@ -25,7 +25,7 @@
   calls-increasing/c
   (let ([count 0])
     (λ ()
-      (set! count (+ count 0))
+      (set! count (+ count 1))
       count)))
 
 ;; Oops! we broke it...
@@ -33,7 +33,7 @@
   calls-increasing/c
   (λ ()
     (let ([count 0])
-      (set! count (+ count 0))
+      (set! count (+ count 1))
       count)))
 
 #|
