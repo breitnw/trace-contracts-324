@@ -45,3 +45,9 @@ a trace contract consists of three components:
 - a sequence of predicate clauses, which determine whether the trace is valid
   and accumulate values in the trace
 |#
+
+;; TODO multiple trace variables, one in client and one in server
+;; TODO example where the client is blamed for not passing in a good value
+;; TODO example where the trace contract is applied to a function passed into
+;; the server, and the client is blamed
+;; TODO make-immutable, mutate
