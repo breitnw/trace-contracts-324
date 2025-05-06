@@ -53,15 +53,40 @@ a trace contract consists of three components:
 
 |# ;; ==========================================================================
 
+(module client-blame-trace racket
+  (require stream-etc)
+  (require trace-contract)
 
-;; TODO multiple trace variables, one in client and one in server
-;; (define possible-states)
-;; (define/contract )
+  (define/match (no-duplicates? _)
+    [((stream))
+     true]
+    [((stream* val xt))
+     (and (not (stream-member? xt val))
+          (no-duplicates? xt))])
 
-;; TODO example where the client is blamed for not passing in a good value
+  (define produces-unique-ids/c
+    (trace/c ([id string?])
+             (-> id)
+             (full (id) no-duplicates?)))
 
-;; TODO example where the trace contract is applied to a function passed into
-;; the server, and the client is blamed
+  (provide
+   (contract-out
+    [register (trace/c ([id string?])
+                       (-> id void)
+                       (full (id) no-duplicates?))]
+    [register-auto (-> produces-unique-ids/c (-> void))]))
+
+  ;; register users, given their id
+  (define (register user-id)
+    (displayln (format "hi, ~a! you've successfully registered" user-id)))
+
+  ;; register users, given a function that generates a unique id
+  (define (register-auto generate-id)
+    (λ ()
+      (define user-id (generate-id))
+      (displayln (format "hi, friend! you've successfully registered as ~a"
+                         user-id)))))
+
 
 
 ;; TRACING FUNCTION INTERACTIONS ===============================================
@@ -111,11 +136,15 @@ a trace contract consists of three components:
 ;; Requires for REPL ===========================================================
 
 (require (submod "." basic-trace))
+(require (submod "." client-blame-trace))
 (require (submod "." multi-func-trace))
 
 
 ;; DEMO ========================================================================
 
+;; client-blame-trace (define rauto (register-auto (lambda () (number->string (random)))))
+
+;; multi-func-trace
 ;; (define key (string #\H #\e #\l #\l #\o))
 ;; (define my-hash (make-hash))
 ;; (hash-set! my-hash key 'the-val)
