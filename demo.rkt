@@ -5,11 +5,11 @@
 
 (define calls-increasing/c
   (trace/c
-   ;; ([x natural?]) declares `x` as a trace variable with contract `natural?`.
+   ;; ([num natural?]) declares `num` as a trace variable with contract `natural?`.
    ;; Trace variables represent values that we want to collect into the trace as
-   ;; they flow through the function
+   ;; they flow through the function.
    ([num natural?])
-   ;; (-> num) uses `x` as a collector contract. Whenever a value matches `num`
+   ;; (-> num) uses `num` as a collector contract. Whenever a value matches `num`
    ;; during a contract check (i.e., when that value is returned from the
    ;; function), it is accumulated into the trace.
    (-> num)
