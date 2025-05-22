@@ -78,15 +78,9 @@
 
 (define-metafunction Λ-eval
   next : σ -> α
-  [(next null) ,0]
-  [(next (aSto α_1 u_1 σ_2))
-   (max (+ 1 α_1) (next σ_2))])
-;; I don't think this works currently since `(next σ_2)` will return a Redex term but `max` wants Racket terms
-#;#;
-[(next (aSto α_1 u_1 null))
- ,(+ 1 (term α_1))]
-[(next (aSto α_1 u_1 σ_2))
- (next σ_2)]
+  [(next ()) ,0]
+  [(next ((α_1 u_1) (α_2 u_2) ...))
+   ,(+ 1 α_1)])
 
 
 ;; TODO: write unit tests for `next`
@@ -163,15 +157,16 @@
         err-unwind]))
 
 
+;; Load and unload
 
 (define (load-Λ p)
   (cond
-    [(redex-match? Λ e p) (term ((,p hole) mtSto))]
+    [(redex-match? Λ e p) (term (,p ()))]
     [else (raise "load: expected a valid program")]))
 
 (define-metafunction Λ-eval
   unload-Λ : ζ -> v
-  [(unload-Λ ((v hole) σ)) v])
+  [(unload-Λ (v σ)) v])
 
 
 ;
