@@ -4,20 +4,20 @@
 (require rackunit)
 
 
-;                                            
-;                                            
-;    ;;;;                  ;                 
-;   ;;   ;                 ;                 
-;   ;      ;   ;  ; ;;   ;;;;;  ;;;;   ;   ; 
-;   ;;     ;   ;  ;;  ;    ;        ;   ; ;  
-;    ;;;;   ; ;   ;   ;    ;        ;   ;;;  
-;        ;  ; ;   ;   ;    ;     ;;;;    ;   
-;        ;  ; ;   ;   ;    ;    ;   ;   ;;;  
-;   ;    ;  ;;    ;   ;    ;    ;   ;   ; ;  
-;    ;;;;    ;    ;   ;    ;;;   ;;;;  ;   ; 
-;            ;                               
-;           ;                                
-;          ;;                                
+;
+;
+;    ;;;;                  ;
+;   ;;   ;                 ;
+;   ;      ;   ;  ; ;;   ;;;;;  ;;;;   ;   ;
+;   ;;     ;   ;  ;;  ;    ;        ;   ; ;
+;    ;;;;   ; ;   ;   ;    ;        ;   ;;;
+;        ;  ; ;   ;   ;    ;     ;;;;    ;
+;        ;  ; ;   ;   ;    ;    ;   ;   ;;;
+;   ;    ;  ;;    ;   ;    ;    ;   ;   ; ;
+;    ;;;;    ;    ;   ;    ;;;   ;;;;  ;   ;
+;            ;
+;           ;
+;          ;;
 
 
 (define-language Λ
@@ -68,71 +68,68 @@
             (term true))
 
 
-;                                                                               
-;                                   ;                                           
-;     ;;                            ;                  ;       ;                
-;     ;;                            ;                  ;                        
-;     ;;           ;;;;   ;;;    ;;;;  ;   ;   ;;;   ;;;;;   ;;;    ;;;   ; ;;  
-;    ;  ;          ;;  ; ;;  ;  ;; ;;  ;   ;  ;;  ;    ;       ;   ;; ;;  ;;  ; 
-;    ;  ;          ;     ;   ;; ;   ;  ;   ;  ;        ;       ;   ;   ;  ;   ; 
-;    ;  ;          ;     ;;;;;; ;   ;  ;   ;  ;        ;       ;   ;   ;  ;   ; 
-;    ;  ;          ;     ;      ;   ;  ;   ;  ;        ;       ;   ;   ;  ;   ; 
-;   ;    ;         ;     ;      ;; ;;  ;   ;  ;;       ;       ;   ;; ;;  ;   ; 
-;   ;    ;         ;      ;;;;   ;;;;   ;;;;   ;;;;    ;;;   ;;;;;  ;;;   ;   ; 
-;                                                                               
-;                                                                               
-;                                                                               
+(define-metafunction Λ-eval
+  next : σ -> α
+  [(next null) ,0]
+  [(next (aSto α_1 u_1 σ_2))
+   (max (+ 1 α_1) (next σ_2))])
+;; I don't think this works currently since `(next σ_2)` will return a Redex term but `max` wants Racket terms
+#;#;
+[(next (aSto α_1 u_1 null))
+ ,(+ 1 (term α_1))]
+[(next (aSto α_1 u_1 σ_2))
+ (next σ_2)]
+
+
+;; TODO: write unit tests for `next`
+
+(define-metafunction Λ-eval
+  extend : σ -> σ
+  [(extend ((α_1 u_1) ...)) (((next σ) null) (α_1 u_1) ...)])
+
+
+;
+;                                   ;
+;     ;;                            ;                  ;       ;
+;     ;;                            ;                  ;
+;     ;;           ;;;;   ;;;    ;;;;  ;   ;   ;;;   ;;;;;   ;;;    ;;;   ; ;;
+;    ;  ;          ;;  ; ;;  ;  ;; ;;  ;   ;  ;;  ;    ;       ;   ;; ;;  ;;  ;
+;    ;  ;          ;     ;   ;; ;   ;  ;   ;  ;        ;       ;   ;   ;  ;   ;
+;    ;  ;          ;     ;;;;;; ;   ;  ;   ;  ;        ;       ;   ;   ;  ;   ;
+;    ;  ;          ;     ;      ;   ;  ;   ;  ;        ;       ;   ;   ;  ;   ;
+;   ;    ;         ;     ;      ;; ;;  ;   ;  ;;       ;       ;   ;; ;;  ;   ;
+;   ;    ;         ;      ;;;;   ;;;;   ;;;;   ;;;;    ;;;   ;;;;;  ;;;   ;   ;
+;
+;
+;
 
 
 (define -->Λ
   (reduction-relation
    Λ-eval
 
-   ;; Standard reduction rules
-   [--> (((e_1 e_2) E) σ)
-        ((e_1 (in-hole E (hole e_2))) σ)
-        scc1]
-
-   ;; changed to just one argument
-   [--> (((o e) E) σ)
-        ((e (in-hole E (o hole))) σ)
-        scc2]
-
    ;; beta
-   [--> ((v (in-hole E ((λ (x) e) hole))) σ)
-        (((substitute e x v) E) σ)
-        sccβ]
-
-   ;; administrative rule: application pop+push
-   [--> ((v (in-hole E (hole e))) σ)
-        ((e (in-hole E (v hole))) σ)
-        scc3]
-
-   ;; administrative rule: primitive operation pop+push
-   ;; deleted b/c primitive operations only take one argument
-   #;
-   [--> ((v (in-hole E (o v_1 ... hole e_1 e_2 ...))) σ)
-        ((e_1 (in-hole E (o v_1 ... v hole e_2 ...))) σ)
-        scc4]
+   [--> ((in-hole E ((λ (x) e) v)) σ)
+        ((in-hole E (substitute e x v)) σ)
+        Λβ]
 
    ;; delta
-   ;; changed b/c primitive operations only take one argument
-   [--> ((v (in-hole E (o hole))) σ)
-        (((delta o v σ) E) σ)
-        sccδ]
+   [--> ((in-hole E (o v)) σ)
+        ((in-hole E (delta o v σ)) σ)
+        Λδ]
 
    ;; New rules from paper:
-   [--> ((v (in-hole E (if hole e_1 e_2))) σ)
-        ((e_1 E) σ)
+   [--> ((in-hole E (if v e_1 e_2)) σ)
+        ((in-hole E e_1) σ)
         (side-condition (not (equal? (term v) (term false))))
         if-true]
-   
-   [--> ((false (in-hole E (if hole e_1 e_2))) σ)
-        ((e_2 E) σ)
+
+   [--> ((in-hole E (if false e_1 e_2)) σ)
+        ((in-hole E e_2) σ)
         if-false]
 
-   [--> (((queue) E) σ)
-        (((next σ) E) σ)
+   [--> ((in-hole E (queue)) σ)
+        ((in-hole E (next σ)) σ)
         queue]
 
    [--> ((v (in-hole E (add! α hole))) σ)
@@ -140,7 +137,7 @@
         add!]
 
    [--> ((v (in-hole E (v_f hole))) σ)
-        (((err runtime REPL) E) σ)
+        (([err runtime REPL] E) σ)
         ;; rule only fires if `v_f` is not a function
         (side-condition (not (redex-match? Λ-eval f (term v_f))))
         err-app]
@@ -157,20 +154,6 @@
         (side-condition (not (redex-match? Λ-eval hole (term E))))
         err-unwind]))
 
-(define-metafunction Λ-eval
-  next : σ -> α
-  [(next null) ,0]
-  [(next (aSto α_1 u_1 σ_2))
-   (max (+ 1 α_1) (next σ_2))])
-;; I don't think this works currently since `(next σ_2)` will return a Redex term but `max` wants Racket terms
-#;#;
-[(next (aSto α_1 u_1 null))
- ,(+ 1 (term α_1))]
-[(next (aSto α_1 u_1 σ_2))
- (next σ_2)]
-
-;; TODO: write unit tests for `next`
-
 
 
 (define (load-Λ p)
@@ -183,20 +166,20 @@
   [(unload-Λ ((v hole) σ)) v])
 
 
-;                                                   
-;                                                   
-;  ;;;;;;;                 ;       ;                
-;     ;                    ;                        
-;     ;     ;;;    ;;;   ;;;;;   ;;;   ; ;;    ;;;; 
-;     ;    ;;  ;  ;   ;    ;       ;   ;;  ;  ;;  ; 
-;     ;    ;   ;; ;        ;       ;   ;   ;  ;   ; 
-;     ;    ;;;;;;  ;;;     ;       ;   ;   ;  ;   ; 
-;     ;    ;          ;    ;       ;   ;   ;  ;   ; 
-;     ;    ;      ;   ;    ;       ;   ;   ;  ;; ;; 
-;     ;     ;;;;   ;;;     ;;;   ;;;;; ;   ;   ;;;; 
-;                                                 ; 
-;                                              ;  ; 
-;                                               ;;  
+;
+;
+;  ;;;;;;;                 ;       ;
+;     ;                    ;
+;     ;     ;;;    ;;;   ;;;;;   ;;;   ; ;;    ;;;;
+;     ;    ;;  ;  ;   ;    ;       ;   ;;  ;  ;;  ;
+;     ;    ;   ;; ;        ;       ;   ;   ;  ;   ;
+;     ;    ;;;;;;  ;;;     ;       ;   ;   ;  ;   ;
+;     ;    ;          ;    ;       ;   ;   ;  ;   ;
+;     ;    ;      ;   ;    ;       ;   ;   ;  ;; ;;
+;     ;     ;;;;   ;;;     ;;;   ;;;;; ;   ;   ;;;;
+;                                                 ;
+;                                              ;  ;
+;                                               ;;
 
 
 (test-equal
@@ -207,5 +190,3 @@
       -->Λ
       (load-Λ (term ((λ (x) true) false)))))))
  (term true))
-
-
