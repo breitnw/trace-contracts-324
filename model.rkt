@@ -24,6 +24,31 @@
   (α ::= natural)
   (j k l ::= x))
 
+;; I don't think the syntax is exactly correct here, but the idea is there
+(define-metafunction Λ-eval
+  delta : o v σ -> ?
+  [(delta null? α σ)
+   (if (= (term (find σ α)) (term null))
+       true
+       false)]
+  [(delta head α σ)
+   (define sto-val (find σ α))
+   (cond
+     [(= (term null) (term sto-val))
+      (err runtime REPL)]
+     [(= (term (cons v α_1)) (term sto-val))
+      v])]
+  [(delta tail α σ)
+   (define sto-val (find σ α))
+   (cond
+     [(= (term null) (term sto-val))
+      (err runtime REPL)]
+     [(= (term (cons v α_1)) (term sto-val))
+      α_1])]
+  ;; v ∉ Addr
+  [(delta null? v σ)
+   (err runtime REPL)])
+
 (define -->Λ
   (reduction-relation
    Λ-eval
@@ -102,7 +127,6 @@
   [(next (aSto α_1 u_1 σ_2))
    (max (+ 1 α_1) (next σ_2))])
 ;; I don't think this works currently since `(next σ_2)` will return a Redex term but `max` wants Racket terms
-;; - Nicholas DG
   #;#;
   [(next (aSto α_1 u_1 null))
    ,(+ 1 (term α_1))]
@@ -111,7 +135,6 @@
 
 ;; TODO: write unit tests for `next`
 
-;; empty store
 
         
 ; ((v E) σ)
