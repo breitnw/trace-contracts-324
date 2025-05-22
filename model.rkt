@@ -67,6 +67,24 @@
   [(delta null? v σ)
    (err runtime REPL)])
 
+(define-metafunction Λ-eval
+  next : σ -> α
+  [(next null) ,0]
+  [(next (aSto α_1 u_1 σ_2))
+   (max (+ 1 α_1) (next σ_2))])
+;; I don't think this works currently since `(next σ_2)` will return a Redex term but `max` wants Racket terms
+#;#;
+[(next (aSto α_1 u_1 null))
+ ,(+ 1 (term α_1))]
+[(next (aSto α_1 u_1 σ_2))
+ (next σ_2)]
+
+;; TODO: write unit tests for `next`
+
+(define-metafunction Λ-eval
+  extend : σ -> σ
+  [(extend ((α_1 u_1) ...)) (((next σ) null) (α_1 u_1) ...)])
+
 
 ;
 ;                                   ;
@@ -133,20 +151,6 @@
         ;; rule only fires if `E` is not a hole
         (side-condition (not (redex-match? Λ-eval hole (term E))))
         err-unwind]))
-
-(define-metafunction Λ-eval
-  next : σ -> α
-  [(next null) ,0]
-  [(next (aSto α_1 u_1 σ_2))
-   (max (+ 1 α_1) (next σ_2))])
-;; I don't think this works currently since `(next σ_2)` will return a Redex term but `max` wants Racket terms
-#;#;
-[(next (aSto α_1 u_1 null))
- ,(+ 1 (term α_1))]
-[(next (aSto α_1 u_1 σ_2))
- (next σ_2)]
-
-;; TODO: write unit tests for `next`
 
 
 
