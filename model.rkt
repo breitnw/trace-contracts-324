@@ -4,20 +4,20 @@
 (require rackunit)
 
 
-;                                            
-;                                            
-;    ;;;;                  ;                 
-;   ;;   ;                 ;                 
-;   ;      ;   ;  ; ;;   ;;;;;  ;;;;   ;   ; 
-;   ;;     ;   ;  ;;  ;    ;        ;   ; ;  
-;    ;;;;   ; ;   ;   ;    ;        ;   ;;;  
-;        ;  ; ;   ;   ;    ;     ;;;;    ;   
-;        ;  ; ;   ;   ;    ;    ;   ;   ;;;  
-;   ;    ;  ;;    ;   ;    ;    ;   ;   ; ;  
-;    ;;;;    ;    ;   ;    ;;;   ;;;;  ;   ; 
-;            ;                               
-;           ;                                
-;          ;;                                
+;
+;
+;    ;;;;                  ;
+;   ;;   ;                 ;
+;   ;      ;   ;  ; ;;   ;;;;;  ;;;;   ;   ;
+;   ;;     ;   ;  ;;  ;    ;        ;   ; ;
+;    ;;;;   ; ;   ;   ;    ;        ;   ;;;
+;        ;  ; ;   ;   ;    ;     ;;;;    ;
+;        ;  ; ;   ;   ;    ;    ;   ;   ;;;
+;   ;    ;  ;;    ;   ;    ;    ;   ;   ; ;
+;    ;;;;    ;    ;   ;    ;;;   ;;;;  ;   ;
+;            ;
+;           ;
+;          ;;
 
 
 (define-language Λ
@@ -50,7 +50,7 @@
        false)]
   [(delta head α σ)
    (define sto-val (find σ α))
-   (cond
+   ,(cond
      [(= (term null) (term sto-val))
       (err runtime REPL)]
      [(= (term (cons v α_1)) (term sto-val))
@@ -67,71 +67,48 @@
    (err runtime REPL)])
 
 
-;                                                                               
-;                                   ;                                           
-;     ;;                            ;                  ;       ;                
-;     ;;                            ;                  ;                        
-;     ;;           ;;;;   ;;;    ;;;;  ;   ;   ;;;   ;;;;;   ;;;    ;;;   ; ;;  
-;    ;  ;          ;;  ; ;;  ;  ;; ;;  ;   ;  ;;  ;    ;       ;   ;; ;;  ;;  ; 
-;    ;  ;          ;     ;   ;; ;   ;  ;   ;  ;        ;       ;   ;   ;  ;   ; 
-;    ;  ;          ;     ;;;;;; ;   ;  ;   ;  ;        ;       ;   ;   ;  ;   ; 
-;    ;  ;          ;     ;      ;   ;  ;   ;  ;        ;       ;   ;   ;  ;   ; 
-;   ;    ;         ;     ;      ;; ;;  ;   ;  ;;       ;       ;   ;; ;;  ;   ; 
-;   ;    ;         ;      ;;;;   ;;;;   ;;;;   ;;;;    ;;;   ;;;;;  ;;;   ;   ; 
-;                                                                               
-;                                                                               
-;                                                                               
+;
+;                                   ;
+;     ;;                            ;                  ;       ;
+;     ;;                            ;                  ;
+;     ;;           ;;;;   ;;;    ;;;;  ;   ;   ;;;   ;;;;;   ;;;    ;;;   ; ;;
+;    ;  ;          ;;  ; ;;  ;  ;; ;;  ;   ;  ;;  ;    ;       ;   ;; ;;  ;;  ;
+;    ;  ;          ;     ;   ;; ;   ;  ;   ;  ;        ;       ;   ;   ;  ;   ;
+;    ;  ;          ;     ;;;;;; ;   ;  ;   ;  ;        ;       ;   ;   ;  ;   ;
+;    ;  ;          ;     ;      ;   ;  ;   ;  ;        ;       ;   ;   ;  ;   ;
+;   ;    ;         ;     ;      ;; ;;  ;   ;  ;;       ;       ;   ;; ;;  ;   ;
+;   ;    ;         ;      ;;;;   ;;;;   ;;;;   ;;;;    ;;;   ;;;;;  ;;;   ;   ;
+;
+;
+;
 
 
 (define -->Λ
   (reduction-relation
    Λ-eval
 
-   ;; Standard reduction rules
-   [--> (((e_1 e_2) E) σ)
-        ((e_1 (in-hole E (hole e_2))) σ)
-        scc1]
-
-   ;; changed to just one argument
-   [--> (((o e) E) σ)
-        ((e (in-hole E (o hole))) σ)
-        scc2]
-
    ;; beta
-   [--> ((v (in-hole E ((λ (x) e) hole))) σ)
-        (((substitute e x v) E) σ)
-        sccβ]
-
-   ;; administrative rule: application pop+push
-   [--> ((v (in-hole E (hole e))) σ)
-        ((e (in-hole E (v hole))) σ)
-        scc3]
-
-   ;; administrative rule: primitive operation pop+push
-   ;; deleted b/c primitive operations only take one argument
-   #;
-   [--> ((v (in-hole E (o v_1 ... hole e_1 e_2 ...))) σ)
-        ((e_1 (in-hole E (o v_1 ... v hole e_2 ...))) σ)
-        scc4]
+   [--> ((in-hole E ((λ (x) e) v)) σ)
+        ((in-hole E (substitute e x v)) σ)
+        Λβ]
 
    ;; delta
-   ;; changed b/c primitive operations only take one argument
-   [--> ((v (in-hole E (o hole))) σ)
-        (((delta o v σ) E) σ)
-        sccδ]
+   [--> ((in-hole E (o v)) σ)
+        ((in-hole E (delta o v σ)) σ)
+        Λδ]
 
    ;; New rules from paper:
-   [--> ((v (in-hole E (if hole e_1 e_2))) σ)
-        ((e_1 E) σ)
+   [--> ((in-hole E (if v e_1 e_2)) σ)
+        ((in-hole E e_1) σ)
         (side-condition (not (equal? (term v) (term false))))
         if-true]
-   
-   [--> ((false (in-hole E (if hole e_1 e_2))) σ)
-        ((e_2 E) σ)
+
+   [--> ((in-hole E (if false e_1 e_2)) σ)
+        ((in-hole E e_2) σ)
         if-false]
 
-   [--> (((queue) E) σ)
-        (((next σ) E) σ)
+   [--> ((in-hole E (queue)) σ)
+        ((in-hole E (next σ)) σ)
         queue]
 
    [--> ((v (in-hole E (add! α hole))) σ)
@@ -139,7 +116,7 @@
         add!]
 
    [--> ((v (in-hole E (v_f hole))) σ)
-        (((err runtime REPL) E) σ)
+        (([err runtime REPL] E) σ)
         ;; rule only fires if `v_f` is not a function
         (side-condition (not (redex-match? Λ-eval f (term v_f))))
         err-app]
@@ -182,18 +159,17 @@
   [(unload-Λ ((v hole) σ)) v])
 
 
-;                                                   
-;                                                   
-;  ;;;;;;;                 ;       ;                
-;     ;                    ;                        
-;     ;     ;;;    ;;;   ;;;;;   ;;;   ; ;;    ;;;; 
-;     ;    ;;  ;  ;   ;    ;       ;   ;;  ;  ;;  ; 
-;     ;    ;   ;; ;        ;       ;   ;   ;  ;   ; 
-;     ;    ;;;;;;  ;;;     ;       ;   ;   ;  ;   ; 
-;     ;    ;          ;    ;       ;   ;   ;  ;   ; 
-;     ;    ;      ;   ;    ;       ;   ;   ;  ;; ;; 
-;     ;     ;;;;   ;;;     ;;;   ;;;;; ;   ;   ;;;; 
-;                                                 ; 
-;                                              ;  ; 
-;                                               ;;  
-
+;
+;
+;  ;;;;;;;                 ;       ;
+;     ;                    ;
+;     ;     ;;;    ;;;   ;;;;;   ;;;   ; ;;    ;;;;
+;     ;    ;;  ;  ;   ;    ;       ;   ;;  ;  ;;  ;
+;     ;    ;   ;; ;        ;       ;   ;   ;  ;   ;
+;     ;    ;;;;;;  ;;;     ;       ;   ;   ;  ;   ;
+;     ;    ;          ;    ;       ;   ;   ;  ;   ;
+;     ;    ;      ;   ;    ;       ;   ;   ;  ;; ;;
+;     ;     ;;;;   ;;;     ;;;   ;;;;; ;   ;   ;;;;
+;                                                 ;
+;                                              ;  ;
+;                                               ;;
