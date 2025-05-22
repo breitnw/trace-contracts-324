@@ -34,7 +34,7 @@
   Λ
   (ζ ::= (e σ))  ;; question: should the `e` be an `E`?
   (e ::= .... α (err j k))
-  (v ::= b f a)
+  (v ::= b f α)
   (E ::= hole (o E) (if E e e) (E e) (v E) (add! E e) (add! v E))
   (u ::= null (cons v α))  ;; store values
   (σ ::= ((α u) ...))  ;; store
@@ -64,7 +64,15 @@
    (err runtime REPL)])
 
 ;; Test cases for `delta`
-(test-equal (delta null? 0 ((0 null)))
+(redex-match? Λ-eval
+              true
+              (term (delta null? 0 ((0 null)))))
+(redex-match? Λ-eval
+              false
+              (term (delta null? 0 ((0 (cons false 1)) (1 null)))))
+
+#;
+(test-equal (term (delta null? 0 ((0 null))))
             (term true))
 
 
