@@ -36,31 +36,32 @@
   (e ::= .... α (err j k))
   (v ::= b f a)
   (E ::= hole (o E) (if E e e) (E e) (v E) (add! E e) (add! v E))
-  (u ::= null (cons v α))
-  (σ ::= (aSto α u σ) mtSto)
+  (u ::= null (cons v α))  ;; store values
+  (σ ::= ((α u) ...))  ;; store
   (α ::= natural)
   (j k l ::= x))
 
 ;; I don't think the syntax is exactly correct here, but the idea is there
 (define-metafunction Λ-eval
   delta : o v σ -> ?
-  [(delta null? α σ)
-   (if (= (term (find σ α)) (term null))
+  ;; expand sigma in pattern
+  [(delta null? α_1 (aSto ))
+   (if (equal? (term (find σ α)) (term null))
        true
        false)]
   [(delta head α σ)
    (define sto-val (find σ α))
-   (cond
-     [(= (term null) (term sto-val))
+   ,(cond
+     [(equal? (term null) (term sto-val))
       (err runtime REPL)]
-     [(= (term (cons v α_1)) (term sto-val))
+     [(equal? (term (cons v α_1)) (term sto-val))
       v])]
   [(delta tail α σ)
    (define sto-val (find σ α))
    (cond
-     [(= (term null) (term sto-val))
+     [(equal? (term null) (term sto-val))
       (err runtime REPL)]
-     [(= (term (cons v α_1)) (term sto-val))
+     [(equal? (term (cons v α_1)) (term sto-val))
       α_1])]
   ;; v ∉ Addr
   [(delta null? v σ)
@@ -196,4 +197,14 @@
 ;                                                 ; 
 ;                                              ;  ; 
 ;                                               ;;  
+
+(test-equal
+ (term
+  (unload-Λ
+   ,(first
+     (apply-reduction-relation*
+      -->Λ
+      (load-Λ (term ((λ (x) 42) 42)))))))
+ (term 42))
+
 
