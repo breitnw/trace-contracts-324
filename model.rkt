@@ -16,7 +16,7 @@
 (define-extended-language Λ-eval
   Λ
   (ζ ::= (E σ))  ;; question: should the `e` be an `E`?
-  (e ::= ... α (err j k))
+  (e ::= .... α (err j k))
   (v ::= b f a)
   (E ::= hole (o E) (if E e e) (E e) (v E) (add! E e) (add! v E))
   (u ::= null (cons v α))
@@ -32,10 +32,11 @@
    [--> (((e_1 e_2) E) σ)
         ((e_1 (in-hole E (hole e_2))) σ)
         scc1]
-   
+
+   ;; changed to just one argument
    [--> (((o e) E) σ)
         ((e (in-hole E (o hole))) σ)
-        scc2]  ;; changed to just one argument
+        scc2]
 
    ;; beta
    [--> ((v (in-hole E ((λ (x) e) hole))) σ)
@@ -60,7 +61,6 @@
         sccδ]
 
    ;; New rules from paper:
-   ;; if-true
    [--> ((v (in-hole E (if hole e_1 e_2))) σ)
         ((e_1 E) σ)
         (side-condition (not (equal? (term v) (term false))))
@@ -74,13 +74,35 @@
         (((next σ) E) σ)
         queue]
 
-   ))
+   [--> ((v (in-hole E (add! α hole))) σ)
+        ((α E) (add σ α v))
+        add!]
+
+   [--> ((v (in-hole E (v_f hole))) σ)
+        (((err runtime REPL) E) σ)
+        ;; rule only fires if `v_f` is not a function
+        (side-condition (not (redex-match? Λ-eval f (term v_f))))
+        err-app]
+
+   [--> ((v (in-hole E (add! v_q hole))) σ)
+        (((err runtime REPL) E) σ)
+        ;; rule only fires if `v_q` is not an address
+        (side-condition (not (redex-match? Λ-eval α (term v_q))))
+        err-add!]
+
+   [--> (((err j k) E) σ)
+        ((err j k) σ)
+        ;; rule only fires if `E` is not a hole
+        (side-condition (not (redex-match? Λ-eval hole (term E))))
+        err-unwind]))
 
 (define-metafunction Λ-eval
   next : σ -> α
   [(next null) ,0]
   [(next (aSto α_1 u_1 σ_2))
    (max (+ 1 α_1) (next σ_2))])
+;; I don't think this works currently since `(next σ_2)` will return a Redex term but `max` wants Racket terms
+;; - Nicholas DG
   #;#;
   [(next (aSto α_1 u_1 null))
    ,(+ 1 (term α_1))]
