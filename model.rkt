@@ -108,6 +108,7 @@
         scc3]
 
    ;; administrative rule: primitive operation pop+push
+   ;; deleted b/c primitive operations only take one argument
    #;
    [--> ((v (in-hole E (o v_1 ... hole e_1 e_2 ...))) σ)
         ((e_1 (in-hole E (o v_1 ... v hole e_2 ...))) σ)
@@ -170,6 +171,15 @@
 ;; TODO: write unit tests for `next`
 
 
+
+(define (load-Λ p)
+  (cond
+    [(redex-match? Λ e p) (term ((,p hole) mtSto))]
+    [else (raise "load: expected a valid program")]))
+
+(define-metafunction Λ-eval
+  unload-Λ : ζ -> v
+  [(unload-Λ ((v hole) σ)) v])
 
 
 ;                                                   
