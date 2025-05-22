@@ -43,35 +43,37 @@
 
 ;; I don't think the syntax is exactly correct here, but the idea is there
 (define-metafunction Λ-eval
-  delta : o v σ -> ?
-  ;; expand sigma in pattern
-  [(delta null? α_1 (aSto ))
-   (if (equal? (term (find σ α)) (term null))
-       true
-       false)]
-  [(delta head α σ)
-   (define sto-val (find σ α))
-   ,(cond
-     [(equal? (term null) (term sto-val))
-      (err runtime REPL)]
-     [(equal? (term (cons v α_1)) (term sto-val))
-      v])]
-  [(delta tail α σ)
-   (define sto-val (find σ α))
-   (cond
-     [(equal? (term null) (term sto-val))
-      (err runtime REPL)]
-     [(equal? (term (cons v α_1)) (term sto-val))
-      α_1])]
+  delta : o v σ -> e  ;; TODO: is `e` the correct type or is there something more specific we can say?
+  [(delta null? α ((α_1 u_1) ... (α null) (α_2 u_2) ...))
+   true]
+  [(delta null? α ((α_1 u_1) ... (α (cons v α_3)) (α_2 u_2) ...))
+   false]
+
+  [(delta head α ((α_1 u_1) ... (α null) (α_2 u_2) ...))
+   (err runtime REPL)]
+  [(delta head α ((α_1 u_1) ... (α (cons v α_3)) (α_2 u_2) ...))
+   v]
+
+  [(delta tail α ((α_1 u_1) ... (α null) (α_2 u_2) ...))
+   (err runtime REPL)]
+  [(delta tail α ((α_1 u_1) ... (α (cons v α_3)) (α_2 u_2) ...))
+   α_3]
+
   ;; v ∉ Addr
-  [(delta null? v σ)
+  [(delta o v σ)
    (err runtime REPL)])
+
+;; Test cases for `delta`
+(test-equal (delta null? 0 ((0 null)))
+            (term true))
+
 
 (define-metafunction Λ-eval
   next : σ -> α
   [(next ()) ,0]
   [(next ((α_1 u_1) (α_2 u_2) ...))
    ,(+ 1 α_1)])
+
 
 ;; TODO: write unit tests for `next`
 
@@ -174,11 +176,12 @@
 ;                                              ;  ;
 ;                                               ;;
 
+
 (test-equal
  (term
   (unload-Λ
    ,(first
      (apply-reduction-relation*
       -->Λ
-      (load-Λ (term ((λ (x) 42) 42)))))))
- (term 42))
+      (load-Λ (term ((λ (x) true) false)))))))
+ (term true))
