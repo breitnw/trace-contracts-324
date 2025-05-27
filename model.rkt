@@ -65,387 +65,325 @@
 
 ;; Test cases for `delta`
 ;; `null?` tests
-(check-true
- (redex-match? Λ-eval
-               true
-               (term (delta null? 0 ((0 null))))))
-(check-true
- (redex-match? Λ-eval
-               false
-               (term (delta null? 0 ((0 (cons false 1)) (1 null))))))
-(check-true
- (redex-match? Λ-eval
-               true
-               (term (delta null? 1 ((0 (cons false 1)) (1 null))))))
+(test-match Λ-eval
+            true
+            (term (delta null? 0 ((0 null)))))
+(test-match Λ-eval
+            false
+            (term (delta null? 0 ((0 (cons false 1)) (1 null)))))
+(test-match Λ-eval
+            true
+            (term (delta null? 1 ((0 (cons false 1)) (1 null)))))
 
 ;; 3 elements in store, all possible locations
-(check-true
- (redex-match? Λ-eval
-               false
-               (term (delta null? 0 ((0 (cons false 1)) (1 null) (2 null))))))
-(check-true
- (redex-match? Λ-eval
-               true
-               (term (delta null? 1 ((0 (cons false 1)) (1 null) (2 null))))))
-(check-true
- (redex-match? Λ-eval
-               true
-               (term (delta null? 2 ((0 (cons false 1)) (1 null) (2 null))))))
+(test-match Λ-eval
+            false
+            (term (delta null? 0 ((0 (cons false 1)) (1 null) (2 null)))))
+(test-match Λ-eval
+            true
+            (term (delta null? 1 ((0 (cons false 1)) (1 null) (2 null)))))
+(test-match Λ-eval
+            true
+            (term (delta null? 2 ((0 (cons false 1)) (1 null) (2 null)))))
 
-(check-true
- (redex-match? Λ-eval
-               false
-               (term (delta null? 0 ((0 (cons (λ (x) x) 2)) (1 (cons true 3)) (2 null) (3 (cons 0 4)) (4 null))))))
-(check-true
- (redex-match? Λ-eval
-               false
-               (term (delta null? 1 ((0 (cons (λ (x) x) 2)) (1 (cons true 3)) (2 null) (3 (cons 0 4)) (4 null))))))
-(check-true
- (redex-match? Λ-eval
-               true
-               (term (delta null? 2 ((0 (cons (λ (x) x) 2)) (1 (cons true 3)) (2 null) (3 (cons 0 4)) (4 null))))))
-(check-true
- (redex-match? Λ-eval
-               false
-               (term (delta null? 3 ((0 (cons (λ (x) x) 2)) (1 (cons true 3)) (2 null) (3 (cons 0 4)) (4 null))))))
-(check-true
- (redex-match? Λ-eval
-               true
-               (term (delta null? 4 ((0 (cons (λ (x) x) 2)) (1 (cons true 3)) (2 null) (3 (cons 0 4)) (4 null))))))
+(test-match Λ-eval
+            false
+            (term (delta null? 0 ((0 (cons (λ (x) x) 2)) (1 (cons true 3)) (2 null) (3 (cons 0 4)) (4 null)))))
+(test-match Λ-eval
+            false
+            (term (delta null? 1 ((0 (cons (λ (x) x) 2)) (1 (cons true 3)) (2 null) (3 (cons 0 4)) (4 null)))))
+(test-match Λ-eval
+            true
+            (term (delta null? 2 ((0 (cons (λ (x) x) 2)) (1 (cons true 3)) (2 null) (3 (cons 0 4)) (4 null)))))
+(test-match Λ-eval
+            false
+            (term (delta null? 3 ((0 (cons (λ (x) x) 2)) (1 (cons true 3)) (2 null) (3 (cons 0 4)) (4 null)))))
+(test-match Λ-eval
+            true
+            (term (delta null? 4 ((0 (cons (λ (x) x) 2)) (1 (cons true 3)) (2 null) (3 (cons 0 4)) (4 null)))))
 
 #;
 (test-equal (term (delta null? 0 ((0 null))))
             (term true))
 
 ;; `head` tests
-(check-true
- (redex-match? Λ-eval
-               (err runtime REPL)
-               (term (delta head 0 ((0 null))))))
-(check-true
- (redex-match? Λ-eval
-               (err runtime REPL)
-               (term (delta head 0 ((0 null) (1 null))))))
-(check-true
- (redex-match? Λ-eval
-               (err runtime REPL)
-               (term (delta head 1 ((0 null) (1 null))))))
-(check-true
- (redex-match? Λ-eval
-               (err runtime REPL)
-               (term (delta head 1 ((0 (cons true 1)) (1 null))))))
-(check-true
- (redex-match? Λ-eval
-               true
-               (term (delta head 0 ((0 (cons true 1)) (1 null))))))
-(check-true
- (redex-match? Λ-eval
-               true
-               (term (delta head
-                            0
-                            ((0 (cons true 1))
-                             (1 null)
-                             (2 (cons (λ (x) y) 4))
-                             (3 (cons 2 5))
-                             (4 (cons false 6))
-                             (5 null)
-                             (6 null))))))
-(check-true
- (redex-match? Λ-eval
-               (err runtime REPL)
-               (term (delta head
-                            1
-                            ((0 (cons true 1))
-                             (1 null)
-                             (2 (cons (λ (x) y) 4))
-                             (3 (cons 2 5))
-                             (4 (cons false 6))
-                             (5 null)
-                             (6 null))))))
-(check-true
- (redex-match? Λ-eval
-               (λ (x) y)
-               (term (delta head
-                            2
-                            ((0 (cons true 1))
-                             (1 null)
-                             (2 (cons (λ (x) y) 4))
-                             (3 (cons 2 5))
-                             (4 (cons false 6))
-                             (5 null)
-                             (6 null))))))
-(check-true
- (redex-match? Λ-eval
-               2
-               (term (delta head
-                            3
-                            ((0 (cons true 1))
-                             (1 null)
-                             (2 (cons (λ (x) y) 4))
-                             (3 (cons 2 5))
-                             (4 (cons false 6))
-                             (5 null)
-                             (6 null))))))
-(check-true
- (redex-match? Λ-eval
-               false
-               (term (delta head
-                            4
-                            ((0 (cons true 1))
-                             (1 null)
-                             (2 (cons (λ (x) y) 4))
-                             (3 (cons 2 5))
-                             (4 (cons false 6))
-                             (5 null)
-                             (6 null))))))
-(check-true
- (redex-match? Λ-eval
-               (err runtime REPL)
-               (term (delta head
-                            5
-                            ((0 (cons true 1))
-                             (1 null)
-                             (2 (cons (λ (x) y) 4))
-                             (3 (cons 2 5))
-                             (4 (cons false 6))
-                             (5 null)
-                             (6 null))))))
-(check-true
- (redex-match? Λ-eval
-               (err runtime REPL)
-               (term (delta head
-                            6
-                            ((0 (cons true 1))
-                             (1 null)
-                             (2 (cons (λ (x) y) 4))
-                             (3 (cons 2 5))
-                             (4 (cons false 6))
-                             (5 null)
-                             (6 null))))))
+(test-match Λ-eval
+            (err runtime REPL)
+            (term (delta head 0 ((0 null)))))
+(test-match Λ-eval
+            (err runtime REPL)
+            (term (delta head 0 ((0 null) (1 null)))))
+(test-match Λ-eval
+            (err runtime REPL)
+            (term (delta head 1 ((0 null) (1 null)))))
+(test-match Λ-eval
+            (err runtime REPL)
+            (term (delta head 1 ((0 (cons true 1)) (1 null)))))
+(test-match Λ-eval
+            true
+            (term (delta head 0 ((0 (cons true 1)) (1 null)))))
+(test-match Λ-eval
+            true
+            (term (delta head
+                         0
+                         ((0 (cons true 1))
+                          (1 null)
+                          (2 (cons (λ (x) y) 4))
+                          (3 (cons 2 5))
+                          (4 (cons false 6))
+                          (5 null)
+                          (6 null)))))
+(test-match Λ-eval
+            (err runtime REPL)
+            (term (delta head
+                         1
+                         ((0 (cons true 1))
+                          (1 null)
+                          (2 (cons (λ (x) y) 4))
+                          (3 (cons 2 5))
+                          (4 (cons false 6))
+                          (5 null)
+                          (6 null)))))
+(test-match Λ-eval
+            (λ (x) y)
+            (term (delta head
+                         2
+                         ((0 (cons true 1))
+                          (1 null)
+                          (2 (cons (λ (x) y) 4))
+                          (3 (cons 2 5))
+                          (4 (cons false 6))
+                          (5 null)
+                          (6 null)))))
+(test-match Λ-eval
+            2
+            (term (delta head
+                         3
+                         ((0 (cons true 1))
+                          (1 null)
+                          (2 (cons (λ (x) y) 4))
+                          (3 (cons 2 5))
+                          (4 (cons false 6))
+                          (5 null)
+                          (6 null)))))
+(test-match Λ-eval
+            false
+            (term (delta head
+                         4
+                         ((0 (cons true 1))
+                          (1 null)
+                          (2 (cons (λ (x) y) 4))
+                          (3 (cons 2 5))
+                          (4 (cons false 6))
+                          (5 null)
+                          (6 null)))))
+(test-match Λ-eval
+            (err runtime REPL)
+            (term (delta head
+                         5
+                         ((0 (cons true 1))
+                          (1 null)
+                          (2 (cons (λ (x) y) 4))
+                          (3 (cons 2 5))
+                          (4 (cons false 6))
+                          (5 null)
+                          (6 null)))))
+(test-match Λ-eval
+            (err runtime REPL)
+            (term (delta head
+                         6
+                         ((0 (cons true 1))
+                          (1 null)
+                          (2 (cons (λ (x) y) 4))
+                          (3 (cons 2 5))
+                          (4 (cons false 6))
+                          (5 null)
+                          (6 null)))))
 
 ;; `tail` tests
-(check-true
- (redex-match? Λ-eval
-               (err runtime REPL)
-               (term (delta tail 0 ((0 null))))))
-(check-true
- (redex-match? Λ-eval
-               (err runtime REPL)
-               (term (delta tail 0 ((0 null) (1 null))))))
-(check-true
- (redex-match? Λ-eval
-               (err runtime REPL)
-               (term (delta tail 1 ((0 null) (1 null))))))
-(check-true
- (redex-match? Λ-eval
-               (err runtime REPL)
-               (term (delta tail 1 ((0 (cons true 1)) (1 null))))))
-(check-true
- (redex-match? Λ-eval
-               1
-               (term (delta tail 0 ((0 (cons true 1)) (1 null))))))
-(check-true
- (redex-match? Λ-eval
-               1
-               (term (delta tail
-                            0
-                            ((0 (cons true 1))
-                             (1 null)
-                             (2 (cons (λ (x) y) 4))
-                             (3 (cons 2 5))
-                             (4 (cons false 6))
-                             (5 null)
-                             (6 null))))))
-(check-true
- (redex-match? Λ-eval
-               (err runtime REPL)
-               (term (delta tail
-                            1
-                            ((0 (cons true 1))
-                             (1 null)
-                             (2 (cons (λ (x) y) 4))
-                             (3 (cons 2 5))
-                             (4 (cons false 6))
-                             (5 null)
-                             (6 null))))))
-(check-true
- (redex-match? Λ-eval
-               4
-               (term (delta tail
-                            2
-                            ((0 (cons true 1))
-                             (1 null)
-                             (2 (cons (λ (x) y) 4))
-                             (3 (cons 2 5))
-                             (4 (cons false 6))
-                             (5 null)
-                             (6 null))))))
-(check-true
- (redex-match? Λ-eval
-               5
-               (term (delta tail
-                            3
-                            ((0 (cons true 1))
-                             (1 null)
-                             (2 (cons (λ (x) y) 4))
-                             (3 (cons 2 5))
-                             (4 (cons false 6))
-                             (5 null)
-                             (6 null))))))
-(check-true
- (redex-match? Λ-eval
-               6
-               (term (delta tail
-                            4
-                            ((0 (cons true 1))
-                             (1 null)
-                             (2 (cons (λ (x) y) 4))
-                             (3 (cons 2 5))
-                             (4 (cons false 6))
-                             (5 null)
-                             (6 null))))))
-(check-true
- (redex-match? Λ-eval
-               (err runtime REPL)
-               (term (delta tail
-                            5
-                            ((0 (cons true 1))
-                             (1 null)
-                             (2 (cons (λ (x) y) 4))
-                             (3 (cons 2 5))
-                             (4 (cons false 6))
-                             (5 null)
-                             (6 null))))))
-(check-true
- (redex-match? Λ-eval
-               (err runtime REPL)
-               (term (delta tail
-                            6
-                            ((0 (cons true 1))
-                             (1 null)
-                             (2 (cons (λ (x) y) 4))
-                             (3 (cons 2 5))
-                             (4 (cons false 6))
-                             (5 null)
-                             (6 null))))))
+(test-match Λ-eval
+            (err runtime REPL)
+            (term (delta tail 0 ((0 null)))))
+(test-match Λ-eval
+            (err runtime REPL)
+            (term (delta tail 0 ((0 null) (1 null)))))
+(test-match Λ-eval
+            (err runtime REPL)
+            (term (delta tail 1 ((0 null) (1 null)))))
+(test-match Λ-eval
+            (err runtime REPL)
+            (term (delta tail 1 ((0 (cons true 1)) (1 null)))))
+(test-match Λ-eval
+            1
+            (term (delta tail 0 ((0 (cons true 1)) (1 null)))))
+(test-match Λ-eval
+            1
+            (term (delta tail
+                         0
+                         ((0 (cons true 1))
+                          (1 null)
+                          (2 (cons (λ (x) y) 4))
+                          (3 (cons 2 5))
+                          (4 (cons false 6))
+                          (5 null)
+                          (6 null)))))
+(test-match Λ-eval
+            (err runtime REPL)
+            (term (delta tail
+                         1
+                         ((0 (cons true 1))
+                          (1 null)
+                          (2 (cons (λ (x) y) 4))
+                          (3 (cons 2 5))
+                          (4 (cons false 6))
+                          (5 null)
+                          (6 null)))))
+(test-match Λ-eval
+            4
+            (term (delta tail
+                         2
+                         ((0 (cons true 1))
+                          (1 null)
+                          (2 (cons (λ (x) y) 4))
+                          (3 (cons 2 5))
+                          (4 (cons false 6))
+                          (5 null)
+                          (6 null)))))
+(test-match Λ-eval
+            5
+            (term (delta tail
+                         3
+                         ((0 (cons true 1))
+                          (1 null)
+                          (2 (cons (λ (x) y) 4))
+                          (3 (cons 2 5))
+                          (4 (cons false 6))
+                          (5 null)
+                          (6 null)))))
+(test-match Λ-eval
+            6
+            (term (delta tail
+                         4
+                         ((0 (cons true 1))
+                          (1 null)
+                          (2 (cons (λ (x) y) 4))
+                          (3 (cons 2 5))
+                          (4 (cons false 6))
+                          (5 null)
+                          (6 null)))))
+(test-match Λ-eval
+            (err runtime REPL)
+            (term (delta tail
+                         5
+                         ((0 (cons true 1))
+                          (1 null)
+                          (2 (cons (λ (x) y) 4))
+                          (3 (cons 2 5))
+                          (4 (cons false 6))
+                          (5 null)
+                          (6 null)))))
+(test-match Λ-eval
+            (err runtime REPL)
+            (term (delta tail
+                         6
+                         ((0 (cons true 1))
+                          (1 null)
+                          (2 (cons (λ (x) y) 4))
+                          (3 (cons 2 5))
+                          (4 (cons false 6))
+                          (5 null)
+                          (6 null)))))
 
 ;;
 ;; primitive operation's input is not an address
 ;;
 
 ;; `null?`
-(check-true
- (redex-match? Λ-eval
-               (err runtime REPL)
-               (term (delta null? true ()))))
-(check-true
- (redex-match? Λ-eval
-               (err runtime REPL)
-               (term (delta null? true ((0 null))))))
-(check-true
- (redex-match? Λ-eval
-               (err runtime REPL)
-               (term (delta null? 1 ((0 null))))))
-(check-true
- (redex-match? Λ-eval
-               (err runtime REPL)
-               (term (delta null? 0 ()))))
-(check-true
- (redex-match? Λ-eval
-               (err runtime REPL)
-               (term (delta null? 3 ((0 null) (1 (cons (λ (x) true) 2)) (2 null))))))
-(check-true
- (redex-match? Λ-eval
-               (err runtime REPL)
-               (term (delta null? true ((0 null) (1 (cons (λ (x) true) 2)) (2 null))))))
-(check-true
- (redex-match? Λ-eval
-               (err runtime REPL)
-               (term (delta null? false ((0 null) (1 (cons (λ (x) true) 2)) (2 null))))))
-(check-true
- (redex-match? Λ-eval
-               (err runtime REPL)
-               (term (delta null? (λ (x) x) ((0 null) (1 (cons (λ (x) true) 2)) (2 null))))))
-(check-true
- (redex-match? Λ-eval
-               (err runtime REPL)
-               (term (delta null? (λ (x) 0) ((0 null) (1 (cons (λ (x) true) 2)) (2 null))))))
+(test-match Λ-eval
+            (err runtime REPL)
+            (term (delta null? true ())))
+(test-match Λ-eval
+            (err runtime REPL)
+            (term (delta null? true ((0 null)))))
+(test-match Λ-eval
+            (err runtime REPL)
+            (term (delta null? 1 ((0 null)))))
+(test-match Λ-eval
+            (err runtime REPL)
+            (term (delta null? 0 ())))
+(test-match Λ-eval
+            (err runtime REPL)
+            (term (delta null? 3 ((0 null) (1 (cons (λ (x) true) 2)) (2 null)))))
+(test-match Λ-eval
+            (err runtime REPL)
+            (term (delta null? true ((0 null) (1 (cons (λ (x) true) 2)) (2 null)))))
+(test-match Λ-eval
+            (err runtime REPL)
+            (term (delta null? false ((0 null) (1 (cons (λ (x) true) 2)) (2 null)))))
+(test-match Λ-eval
+            (err runtime REPL)
+            (term (delta null? (λ (x) x) ((0 null) (1 (cons (λ (x) true) 2)) (2 null)))))
+(test-match Λ-eval
+            (err runtime REPL)
+            (term (delta null? (λ (x) 0) ((0 null) (1 (cons (λ (x) true) 2)) (2 null)))))
 
 ;; `head`
-(check-true
- (redex-match? Λ-eval
-               (err runtime REPL)
-               (term (delta head true ()))))
-(check-true
- (redex-match? Λ-eval
-               (err runtime REPL)
-               (term (delta head true ((0 null))))))
-(check-true
- (redex-match? Λ-eval
-               (err runtime REPL)
-               (term (delta head 1 ((0 null))))))
-(check-true
- (redex-match? Λ-eval
-               (err runtime REPL)
-               (term (delta head 0 ()))))
-(check-true
- (redex-match? Λ-eval
-               (err runtime REPL)
-               (term (delta head 3 ((0 null) (1 (cons (λ (x) true) 2)) (2 null))))))
-(check-true
- (redex-match? Λ-eval
-               (err runtime REPL)
-               (term (delta head true ((0 null) (1 (cons (λ (x) true) 2)) (2 null))))))
-(check-true
- (redex-match? Λ-eval
-               (err runtime REPL)
-               (term (delta head false ((0 null) (1 (cons (λ (x) true) 2)) (2 null))))))
-(check-true
- (redex-match? Λ-eval
-               (err runtime REPL)
-               (term (delta head (λ (x) x) ((0 null) (1 (cons (λ (x) true) 2)) (2 null))))))
-(check-true
- (redex-match? Λ-eval
-               (err runtime REPL)
-               (term (delta head (λ (x) 0) ((0 null) (1 (cons (λ (x) true) 2)) (2 null))))))
+(test-match Λ-eval
+            (err runtime REPL)
+            (term (delta head true ())))
+(test-match Λ-eval
+            (err runtime REPL)
+            (term (delta head true ((0 null)))))
+(test-match Λ-eval
+            (err runtime REPL)
+            (term (delta head 1 ((0 null)))))
+(test-match Λ-eval
+            (err runtime REPL)
+            (term (delta head 0 ())))
+(test-match Λ-eval
+            (err runtime REPL)
+            (term (delta head 3 ((0 null) (1 (cons (λ (x) true) 2)) (2 null)))))
+(test-match Λ-eval
+            (err runtime REPL)
+            (term (delta head true ((0 null) (1 (cons (λ (x) true) 2)) (2 null)))))
+(test-match Λ-eval
+            (err runtime REPL)
+            (term (delta head false ((0 null) (1 (cons (λ (x) true) 2)) (2 null)))))
+(test-match Λ-eval
+            (err runtime REPL)
+            (term (delta head (λ (x) x) ((0 null) (1 (cons (λ (x) true) 2)) (2 null)))))
+(test-match Λ-eval
+            (err runtime REPL)
+            (term (delta head (λ (x) 0) ((0 null) (1 (cons (λ (x) true) 2)) (2 null)))))
 
 ;; `tail`
-(check-true
- (redex-match? Λ-eval
-               (err runtime REPL)
-               (term (delta tail true ()))))
-(check-true
- (redex-match? Λ-eval
-               (err runtime REPL)
-               (term (delta tail true ((0 null))))))
-(check-true
- (redex-match? Λ-eval
-               (err runtime REPL)
-               (term (delta tail 1 ((0 null))))))
-(check-true
- (redex-match? Λ-eval
-               (err runtime REPL)
-               (term (delta tail 0 ()))))
-(check-true
- (redex-match? Λ-eval
-               (err runtime REPL)
-               (term (delta tail 3 ((0 null) (1 (cons (λ (x) true) 2)) (2 null))))))
-(check-true
- (redex-match? Λ-eval
-               (err runtime REPL)
-               (term (delta tail true ((0 null) (1 (cons (λ (x) true) 2)) (2 null))))))
-(check-true
- (redex-match? Λ-eval
-               (err runtime REPL)
-               (term (delta tail false ((0 null) (1 (cons (λ (x) true) 2)) (2 null))))))
-(check-true
- (redex-match? Λ-eval
-               (err runtime REPL)
-               (term (delta tail (λ (x) x) ((0 null) (1 (cons (λ (x) true) 2)) (2 null))))))
-(check-true
- (redex-match? Λ-eval
-               (err runtime REPL)
-               (term (delta tail (λ (x) 0) ((0 null) (1 (cons (λ (x) true) 2)) (2 null))))))
+(test-match Λ-eval
+            (err runtime REPL)
+            (term (delta tail true ())))
+(test-match Λ-eval
+            (err runtime REPL)
+            (term (delta tail true ((0 null)))))
+(test-match Λ-eval
+            (err runtime REPL)
+            (term (delta tail 1 ((0 null)))))
+(test-match Λ-eval
+            (err runtime REPL)
+            (term (delta tail 0 ())))
+(test-match Λ-eval
+            (err runtime REPL)
+            (term (delta tail 3 ((0 null) (1 (cons (λ (x) true) 2)) (2 null)))))
+(test-match Λ-eval
+            (err runtime REPL)
+            (term (delta tail true ((0 null) (1 (cons (λ (x) true) 2)) (2 null)))))
+(test-match Λ-eval
+            (err runtime REPL)
+            (term (delta tail false ((0 null) (1 (cons (λ (x) true) 2)) (2 null)))))
+(test-match Λ-eval
+            (err runtime REPL)
+            (term (delta tail (λ (x) x) ((0 null) (1 (cons (λ (x) true) 2)) (2 null)))))
+(test-match Λ-eval
+            (err runtime REPL)
+            (term (delta tail (λ (x) 0) ((0 null) (1 (cons (λ (x) true) 2)) (2 null)))))
 
 ;; todo: switch tests to `test-match` instead of `(check-true (redex-match? ...`
 
