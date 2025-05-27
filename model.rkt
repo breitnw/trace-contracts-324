@@ -163,23 +163,23 @@
         ((in-hole E (next σ)) σ)
         queue]
 
-   [--> ((v (in-hole E (add! α hole))) σ)
-        ((α E) (add σ α v))
+   [--> ((in-hole E (add! α v)) σ)
+        ((in-hole E α) (add σ α v))
         add!]
 
-   [--> ((v (in-hole E (v_f hole))) σ)
-        (([err runtime REPL] E) σ)
+   [--> ((in-hole E (v_f v)) σ)
+        ((in-hole E (err runtime REPL)) σ)
         ;; rule only fires if `v_f` is not a function
         (side-condition (not (redex-match? Λ-eval f (term v_f))))
         err-app]
 
-   [--> ((v (in-hole E (add! v_q hole))) σ)
-        (((err runtime REPL) E) σ)
+   [--> ((in-hole E (add! v_q v)) σ)
+        ((in-hole E (err runtime REPL)) σ)
         ;; rule only fires if `v_q` is not an address
         (side-condition (not (redex-match? Λ-eval α (term v_q))))
         err-add!]
 
-   [--> (((err j k) E) σ)
+   [--> ((in-hole E (err j k)) σ)
         ((err j k) σ)
         ;; rule only fires if `E` is not a hole
         (side-condition (not (redex-match? Λ-eval hole (term E))))
