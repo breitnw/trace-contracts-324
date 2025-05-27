@@ -223,7 +223,112 @@
                              (5 null)
                              (6 null))))))
 
-;; TODO: test cases for `tail`
+;; `tail` tests
+(check-true
+ (redex-match? Λ-eval
+               (err runtime REPL)
+               (term (delta tail 0 ((0 null))))))
+(check-true
+ (redex-match? Λ-eval
+               (err runtime REPL)
+               (term (delta tail 0 ((0 null) (1 null))))))
+(check-true
+ (redex-match? Λ-eval
+               (err runtime REPL)
+               (term (delta tail 1 ((0 null) (1 null))))))
+(check-true
+ (redex-match? Λ-eval
+               (err runtime REPL)
+               (term (delta tail 1 ((0 (cons true 1)) (1 null))))))
+(check-true
+ (redex-match? Λ-eval
+               1
+               (term (delta tail 0 ((0 (cons true 1)) (1 null))))))
+(check-true
+ (redex-match? Λ-eval
+               1
+               (term (delta tail
+                            0
+                            ((0 (cons true 1))
+                             (1 null)
+                             (2 (cons (λ (x) y) 4))
+                             (3 (cons 2 5))
+                             (4 (cons false 6))
+                             (5 null)
+                             (6 null))))))
+(check-true
+ (redex-match? Λ-eval
+               (err runtime REPL)
+               (term (delta tail
+                            1
+                            ((0 (cons true 1))
+                             (1 null)
+                             (2 (cons (λ (x) y) 4))
+                             (3 (cons 2 5))
+                             (4 (cons false 6))
+                             (5 null)
+                             (6 null))))))
+(check-true
+ (redex-match? Λ-eval
+               4
+               (term (delta tail
+                            2
+                            ((0 (cons true 1))
+                             (1 null)
+                             (2 (cons (λ (x) y) 4))
+                             (3 (cons 2 5))
+                             (4 (cons false 6))
+                             (5 null)
+                             (6 null))))))
+(check-true
+ (redex-match? Λ-eval
+               5
+               (term (delta tail
+                            3
+                            ((0 (cons true 1))
+                             (1 null)
+                             (2 (cons (λ (x) y) 4))
+                             (3 (cons 2 5))
+                             (4 (cons false 6))
+                             (5 null)
+                             (6 null))))))
+(check-true
+ (redex-match? Λ-eval
+               6
+               (term (delta tail
+                            4
+                            ((0 (cons true 1))
+                             (1 null)
+                             (2 (cons (λ (x) y) 4))
+                             (3 (cons 2 5))
+                             (4 (cons false 6))
+                             (5 null)
+                             (6 null))))))
+(check-true
+ (redex-match? Λ-eval
+               (err runtime REPL)
+               (term (delta tail
+                            5
+                            ((0 (cons true 1))
+                             (1 null)
+                             (2 (cons (λ (x) y) 4))
+                             (3 (cons 2 5))
+                             (4 (cons false 6))
+                             (5 null)
+                             (6 null))))))
+(check-true
+ (redex-match? Λ-eval
+               (err runtime REPL)
+               (term (delta tail
+                            6
+                            ((0 (cons true 1))
+                             (1 null)
+                             (2 (cons (λ (x) y) 4))
+                             (3 (cons 2 5))
+                             (4 (cons false 6))
+                             (5 null)
+                             (6 null))))))
+
 ;; TODO: test cases for delta where primitive operation's input is not an address
 
 
