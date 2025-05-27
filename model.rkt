@@ -75,7 +75,17 @@
 
 (define-metafunction Λ-eval
   extend : σ -> σ
-  [(extend ((α_1 u_1) ...)) (((next σ) null) (α_1 u_1) ...)])
+  [(extend ((α_1 u_1) ...))
+   ((α null) (α_1 u_1) ...)
+   (where α (next ((α_1 u_1) ...)))])
+
+(define-metafunction Λ-eval
+  add : σ α v -> σ
+  [(add ((α_1 u_1) ... (α_2 null) (α_3 u_3) ...) α_2 v)
+   ((α_4 null) (α_1 u_1) ... (α_2 (cons v α_4)) (α_3 u_3) ...)
+   (where α_4 (next ((α_1 u_1) ... (α_2 null) (α_3 u_3) ...)))]
+  [(add ((α_1 u_1) ... (α_2 (cons v_2 α_4)) (α_3 u_3) ...) α_2 v)
+   ((α_1 u_1) ... (α_2 (cons v α_4)) (α_3 u_3) ...)])
 
 
 ;
@@ -118,8 +128,12 @@
         ((in-hole E e_2) σ)
         if-false]
 
+   ;; TODO: this should insert into the store
    [--> ((in-hole E (queue)) σ)
-        ((in-hole E (next σ)) σ)
+        ;((in-hole E (next σ)) σ)  ; old version
+        ;; Potential solution below  - Nick DG
+        ;((in-hole E (next σ)) (add σ (next σ) null))
+        ((in-hole E (next σ)) (extend σ))
         queue]
 
    [--> ((in-hole E (add! α v)) σ)
@@ -181,6 +195,42 @@
       -->Λ
       (load-Λ (term ((λ (x) true) false)))))))
  (term true))
+
+(test-equal
+ (term
+  (unload-Λ
+   ,(first
+     (apply-reduction-relation*
+      -->Λ
+      (load-Λ (term (queue)))))))
+ (term 0))
+
+(test-equal
+ (term
+  (unload-Λ
+   ,(first
+     (apply-reduction-relation*
+      -->Λ
+      (load-Λ (term (null? (queue))))))))
+ (term true))        
+
+(test-equal
+ (term
+  (unload-Λ
+   ,(first
+     (apply-reduction-relation*
+      -->Λ
+      (load-Λ (term (head (add! (queue) false))))))))
+ (term false))
+
+(test-equal
+ (term
+  (unload-Λ
+   ,(first
+     (apply-reduction-relation*
+      -->Λ
+      (load-Λ (term (tail (add! (queue) false))))))))
+ (term 1))
 
 
 ;                                                                                             
