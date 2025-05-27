@@ -64,12 +64,11 @@
    (err runtime REPL)])
 
 
-#;
 (define-metafunction Λ-eval
   next : σ -> α
   [(next ()) ,0]
   [(next ((α_1 u_1) (α_2 u_2) ...))
-   ,(+ 1 α_1)])
+   ,(+ 1 (term α_1))])
 
 
 ;; TODO: write unit tests for `next`
