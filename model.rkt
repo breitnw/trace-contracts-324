@@ -385,8 +385,6 @@
             (err runtime REPL)
             (term (delta tail (λ (x) 0) ((0 null) (1 (cons (λ (x) true) 2)) (2 null)))))
 
-;; todo: switch tests to `test-match` instead of `(check-true (redex-match? ...`
-
 
 #;
 (define-metafunction Λ-eval
