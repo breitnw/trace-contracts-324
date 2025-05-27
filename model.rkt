@@ -64,12 +64,41 @@
    (err runtime REPL)])
 
 ;; Test cases for `delta`
+;; null?
 (redex-match? Λ-eval
               true
               (term (delta null? 0 ((0 null)))))
 (redex-match? Λ-eval
               false
               (term (delta null? 0 ((0 (cons false 1)) (1 null)))))
+(redex-match? Λ-eval
+              true
+              (term (delta null? 1 ((0 (cons false 1)) (1 null)))))
+
+;; 3 elements in store, all possible locations
+(redex-match? Λ-eval
+              false
+              (term (delta null? 0 ((0 (cons false 1)) (1 null) (2 null)))))
+(redex-match? Λ-eval
+              true
+              (term (delta null? 1 ((0 (cons false 1)) (1 null) (2 null)))))
+(redex-match? Λ-eval
+              true
+              (term (delta null? 2 ((0 (cons false 1)) (1 null) (2 null)))))
+
+(redex-match? Λ-eval
+              true
+              (term (delta null? 2 ((0 (cons (λ (x) x) 2)) (1 (cons true 3)) (2 null) (3 (cons 0 4)) (4 null)))))
+
+(redex-match? Λ-eval
+              false
+              (term (delta null? 2 ((0 (cons (λ (x) x) 2)) (1 (cons true 3)) (2 null) (3 (cons 0 4)) (4 null)))))
+(redex-match? Λ-eval
+              false
+              (term (delta null? 2 ((0 (cons (λ (x) x) 2)) (1 (cons true 3)) (2 null) (3 (cons 0 4)) (4 null)))))
+(redex-match? Λ-eval
+              true
+              (term (delta null? 2 ((0 (cons (λ (x) x) 2)) (1 (cons true 3)) (2 null) (3 (cons 0 4)) (4 null)))))
 
 #;
 (test-equal (term (delta null? 0 ((0 null))))
