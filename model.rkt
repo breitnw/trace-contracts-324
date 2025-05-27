@@ -63,7 +63,143 @@
   [(delta o v σ)
    (err runtime REPL)])
 
-;; Test cases for `delta`
+
+#;
+(define-metafunction Λ-eval
+  next : σ -> α
+  [(next ()) ,0]
+  [(next ((α_1 u_1) (α_2 u_2) ...))
+   ,(+ 1 α_1)])
+
+
+;; TODO: write unit tests for `next`
+
+(define-metafunction Λ-eval
+  extend : σ -> σ
+  [(extend ((α_1 u_1) ...)) (((next σ) null) (α_1 u_1) ...)])
+
+
+;
+;                                   ;
+;     ;;                            ;                  ;       ;
+;     ;;                            ;                  ;
+;     ;;           ;;;;   ;;;    ;;;;  ;   ;   ;;;   ;;;;;   ;;;    ;;;   ; ;;
+;    ;  ;          ;;  ; ;;  ;  ;; ;;  ;   ;  ;;  ;    ;       ;   ;; ;;  ;;  ;
+;    ;  ;          ;     ;   ;; ;   ;  ;   ;  ;        ;       ;   ;   ;  ;   ;
+;    ;  ;          ;     ;;;;;; ;   ;  ;   ;  ;        ;       ;   ;   ;  ;   ;
+;    ;  ;          ;     ;      ;   ;  ;   ;  ;        ;       ;   ;   ;  ;   ;
+;   ;    ;         ;     ;      ;; ;;  ;   ;  ;;       ;       ;   ;; ;;  ;   ;
+;   ;    ;         ;      ;;;;   ;;;;   ;;;;   ;;;;    ;;;   ;;;;;  ;;;   ;   ;
+;
+;
+;
+
+
+(define -->Λ
+  (reduction-relation
+   Λ-eval
+
+   ;; beta
+   [--> ((in-hole E ((λ (x) e) v)) σ)
+        ((in-hole E (substitute e x v)) σ)
+        Λβ]
+
+   ;; delta
+   [--> ((in-hole E (o v)) σ)
+        ((in-hole E (delta o v σ)) σ)
+        Λδ]
+
+   ;; New rules from paper:
+   [--> ((in-hole E (if v e_1 e_2)) σ)
+        ((in-hole E e_1) σ)
+        (side-condition (not (equal? (term v) (term false))))
+        if-true]
+
+   [--> ((in-hole E (if false e_1 e_2)) σ)
+        ((in-hole E e_2) σ)
+        if-false]
+
+   [--> ((in-hole E (queue)) σ)
+        ((in-hole E (next σ)) σ)
+        queue]
+
+   [--> ((in-hole E (add! α v)) σ)
+        ((in-hole E α) (add σ α v))
+        add!]
+
+   [--> ((in-hole E (v_f v)) σ)
+        ((in-hole E (err runtime REPL)) σ)
+        ;; rule only fires if `v_f` is not a function
+        (side-condition (not (redex-match? Λ-eval f (term v_f))))
+        err-app]
+
+   [--> ((in-hole E (add! v_q v)) σ)
+        ((in-hole E (err runtime REPL)) σ)
+        ;; rule only fires if `v_q` is not an address
+        (side-condition (not (redex-match? Λ-eval α (term v_q))))
+        err-add!]
+
+   [--> ((in-hole E (err j k)) σ)
+        ((err j k) σ)
+        ;; rule only fires if `E` is not a hole
+        (side-condition (not (redex-match? Λ-eval hole (term E))))
+        err-unwind]))
+
+
+;; Load and unload
+
+(define (load-Λ p)
+  (cond
+    [(redex-match? Λ e p) (term (,p ()))]
+    [else (raise "load: expected a valid program")]))
+
+(define-metafunction Λ-eval
+  unload-Λ : ζ -> v
+  [(unload-Λ (v σ)) v])
+
+
+;
+;
+;  ;;;;;;;                 ;       ;
+;     ;                    ;
+;     ;     ;;;    ;;;   ;;;;;   ;;;   ; ;;    ;;;;
+;     ;    ;;  ;  ;   ;    ;       ;   ;;  ;  ;;  ;
+;     ;    ;   ;; ;        ;       ;   ;   ;  ;   ;
+;     ;    ;;;;;;  ;;;     ;       ;   ;   ;  ;   ;
+;     ;    ;          ;    ;       ;   ;   ;  ;   ;
+;     ;    ;      ;   ;    ;       ;   ;   ;  ;; ;;
+;     ;     ;;;;   ;;;     ;;;   ;;;;; ;   ;   ;;;;
+;                                                 ;
+;                                              ;  ;
+;                                               ;;
+
+
+(test-equal
+ (term
+  (unload-Λ
+   ,(first
+     (apply-reduction-relation*
+      -->Λ
+      (load-Λ (term ((λ (x) true) false)))))))
+ (term true))
+
+
+;                                                                                             
+;     ;        ;                                ;                                             
+;      ;       ;         ;;;      ;              ;            ;                    ;          
+;              ;           ;      ;                           ;                    ;          
+;           ;;;;   ;;;     ;    ;;;;;  ;;;;                 ;;;;;   ;;;    ;;;   ;;;;;   ;;;  
+;          ;; ;;  ;;  ;    ;      ;        ;                  ;    ;;  ;  ;   ;    ;    ;   ; 
+;          ;   ;  ;   ;;   ;      ;        ;                  ;    ;   ;; ;        ;    ;     
+;          ;   ;  ;;;;;;   ;      ;     ;;;;                  ;    ;;;;;;  ;;;     ;     ;;;  
+;          ;   ;  ;        ;      ;    ;   ;                  ;    ;          ;    ;        ; 
+;          ;; ;;  ;        ;      ;    ;   ;                  ;    ;      ;   ;    ;    ;   ; 
+;           ;;;;   ;;;;     ;;    ;;;   ;;;;                  ;;;   ;;;;   ;;;     ;;;   ;;;  
+;                                                                                             
+;                                                                                             
+;                                                                                             
+
+
 ;; `null?` tests
 (test-match Λ-eval
             true
@@ -385,122 +521,3 @@
             (err runtime REPL)
             (term (delta tail (λ (x) 0) ((0 null) (1 (cons (λ (x) true) 2)) (2 null)))))
 
-
-#;
-(define-metafunction Λ-eval
-  next : σ -> α
-  [(next ()) ,0]
-  [(next ((α_1 u_1) (α_2 u_2) ...))
-   ,(+ 1 α_1)])
-
-
-;; TODO: write unit tests for `next`
-
-(define-metafunction Λ-eval
-  extend : σ -> σ
-  [(extend ((α_1 u_1) ...)) (((next σ) null) (α_1 u_1) ...)])
-
-
-;
-;                                   ;
-;     ;;                            ;                  ;       ;
-;     ;;                            ;                  ;
-;     ;;           ;;;;   ;;;    ;;;;  ;   ;   ;;;   ;;;;;   ;;;    ;;;   ; ;;
-;    ;  ;          ;;  ; ;;  ;  ;; ;;  ;   ;  ;;  ;    ;       ;   ;; ;;  ;;  ;
-;    ;  ;          ;     ;   ;; ;   ;  ;   ;  ;        ;       ;   ;   ;  ;   ;
-;    ;  ;          ;     ;;;;;; ;   ;  ;   ;  ;        ;       ;   ;   ;  ;   ;
-;    ;  ;          ;     ;      ;   ;  ;   ;  ;        ;       ;   ;   ;  ;   ;
-;   ;    ;         ;     ;      ;; ;;  ;   ;  ;;       ;       ;   ;; ;;  ;   ;
-;   ;    ;         ;      ;;;;   ;;;;   ;;;;   ;;;;    ;;;   ;;;;;  ;;;   ;   ;
-;
-;
-;
-
-
-(define -->Λ
-  (reduction-relation
-   Λ-eval
-
-   ;; beta
-   [--> ((in-hole E ((λ (x) e) v)) σ)
-        ((in-hole E (substitute e x v)) σ)
-        Λβ]
-
-   ;; delta
-   [--> ((in-hole E (o v)) σ)
-        ((in-hole E (delta o v σ)) σ)
-        Λδ]
-
-   ;; New rules from paper:
-   [--> ((in-hole E (if v e_1 e_2)) σ)
-        ((in-hole E e_1) σ)
-        (side-condition (not (equal? (term v) (term false))))
-        if-true]
-
-   [--> ((in-hole E (if false e_1 e_2)) σ)
-        ((in-hole E e_2) σ)
-        if-false]
-
-   [--> ((in-hole E (queue)) σ)
-        ((in-hole E (next σ)) σ)
-        queue]
-
-   [--> ((in-hole E (add! α v)) σ)
-        ((in-hole E α) (add σ α v))
-        add!]
-
-   [--> ((in-hole E (v_f v)) σ)
-        ((in-hole E (err runtime REPL)) σ)
-        ;; rule only fires if `v_f` is not a function
-        (side-condition (not (redex-match? Λ-eval f (term v_f))))
-        err-app]
-
-   [--> ((in-hole E (add! v_q v)) σ)
-        ((in-hole E (err runtime REPL)) σ)
-        ;; rule only fires if `v_q` is not an address
-        (side-condition (not (redex-match? Λ-eval α (term v_q))))
-        err-add!]
-
-   [--> ((in-hole E (err j k)) σ)
-        ((err j k) σ)
-        ;; rule only fires if `E` is not a hole
-        (side-condition (not (redex-match? Λ-eval hole (term E))))
-        err-unwind]))
-
-
-;; Load and unload
-
-(define (load-Λ p)
-  (cond
-    [(redex-match? Λ e p) (term (,p ()))]
-    [else (raise "load: expected a valid program")]))
-
-(define-metafunction Λ-eval
-  unload-Λ : ζ -> v
-  [(unload-Λ (v σ)) v])
-
-
-;
-;
-;  ;;;;;;;                 ;       ;
-;     ;                    ;
-;     ;     ;;;    ;;;   ;;;;;   ;;;   ; ;;    ;;;;
-;     ;    ;;  ;  ;   ;    ;       ;   ;;  ;  ;;  ;
-;     ;    ;   ;; ;        ;       ;   ;   ;  ;   ;
-;     ;    ;;;;;;  ;;;     ;       ;   ;   ;  ;   ;
-;     ;    ;          ;    ;       ;   ;   ;  ;   ;
-;     ;    ;      ;   ;    ;       ;   ;   ;  ;; ;;
-;     ;     ;;;;   ;;;     ;;;   ;;;;; ;   ;   ;;;;
-;                                                 ;
-;                                              ;  ;
-;                                               ;;
-
-
-(test-equal
- (term
-  (unload-Λ
-   ,(first
-     (apply-reduction-relation*
-      -->Λ
-      (load-Λ (term ((λ (x) true) false)))))))
- (term true))
