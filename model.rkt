@@ -345,6 +345,34 @@
         (side-condition (not (redex-match? ΛC-eval κ (term v_κ))))
         err-mon]))
 
+(define (load-ΛC p)
+  (cond
+    [(redex-match? ΛC e p) (term (,p ()))]
+    [else (raise "load: expected a valid program")]))
+
+(define-metafunction ΛC-eval
+  unload-ΛC : ζ -> v
+  [(unload-ΛC (v σ)) v])
+
+
+;                                                          
+;                                                          
+;     ;;     ;;;           ;                    ;          
+;     ;;    ;   ;          ;                    ;          
+;     ;;   ;             ;;;;;   ;;;    ;;;   ;;;;;   ;;;  
+;    ;  ;  ;               ;    ;;  ;  ;   ;    ;    ;   ; 
+;    ;  ;  ;               ;    ;   ;; ;        ;    ;     
+;    ;  ;  ;               ;    ;;;;;;  ;;;     ;     ;;;  
+;    ;  ;  ;               ;    ;          ;    ;        ; 
+;   ;    ;  ;   ;          ;    ;      ;   ;    ;    ;   ; 
+;   ;    ;   ;;;           ;;;   ;;;;   ;;;     ;;;   ;;;  
+;                                                          
+;                                                          
+;                                                          
+
+
+
+
 
 ;                                                                                             
 ;     ;        ;                                ;                                             
