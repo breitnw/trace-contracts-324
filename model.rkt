@@ -85,7 +85,8 @@
    ((α_4 null) (α_1 u_1) ... (α_2 (cons v α_4)) (α_3 u_3) ...)
    (where α_4 (next ((α_1 u_1) ... (α_2 null) (α_3 u_3) ...)))]
   [(add ((α_1 u_1) ... (α_2 (cons v_2 α_4)) (α_3 u_3) ...) α_2 v)
-   ((α_1 u_1) ... (α_2 (cons v α_4)) (α_3 u_3) ...)])
+   (add σ_1 α_4 v)
+   (where σ_1 ((α_1 u_1) ... (α_2 (cons v_2 α_4)) (α_3 u_3) ...))])
 
 
 ;
@@ -231,6 +232,26 @@
       -->Λ
       (load-Λ (term (tail (add! (queue) false))))))))
  (term 1))
+
+(test-equal
+ (term
+  (unload-Λ
+   ,(first
+     (apply-reduction-relation*
+      -->Λ
+      (load-Λ (term (head (add! (add! (queue) false) true))))))))
+ (term false))
+
+(test-equal
+ (term
+  (unload-Λ
+   ,(first
+     (apply-reduction-relation*
+      -->Λ
+      (load-Λ (term (if (head (add! (add! (queue) false) true))
+                        true
+                        (head (add! (add! (add! (queue) (λ (x) x)) (λ (x) false)) false)))))))))
+ (term (λ (x) x)))
 
 
 ;                                                                                             
