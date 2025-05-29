@@ -172,20 +172,20 @@
   [(unload-Λ (v σ)) v])
 
 
-;
-;
-;  ;;;;;;;                 ;       ;
-;     ;                    ;
-;     ;     ;;;    ;;;   ;;;;;   ;;;   ; ;;    ;;;;
-;     ;    ;;  ;  ;   ;    ;       ;   ;;  ;  ;;  ;
-;     ;    ;   ;; ;        ;       ;   ;   ;  ;   ;
-;     ;    ;;;;;;  ;;;     ;       ;   ;   ;  ;   ;
-;     ;    ;          ;    ;       ;   ;   ;  ;   ;
-;     ;    ;      ;   ;    ;       ;   ;   ;  ;; ;;
-;     ;     ;;;;   ;;;     ;;;   ;;;;; ;   ;   ;;;;
-;                                                 ;
-;                                              ;  ;
-;                                               ;;
+;                                                   
+;                                                   
+;     ;;            ;                    ;          
+;     ;;            ;                    ;          
+;     ;;          ;;;;;   ;;;    ;;;   ;;;;;   ;;;  
+;    ;  ;           ;    ;;  ;  ;   ;    ;    ;   ; 
+;    ;  ;           ;    ;   ;; ;        ;    ;     
+;    ;  ;           ;    ;;;;;;  ;;;     ;     ;;;  
+;    ;  ;           ;    ;          ;    ;        ; 
+;   ;    ;          ;    ;      ;   ;    ;    ;   ; 
+;   ;    ;          ;;;   ;;;;   ;;;     ;;;   ;;;  
+;                                                   
+;                                                   
+;                                                   
 
 
 (test-equal
@@ -252,6 +252,98 @@
                         true
                         (head (add! (add! (add! (queue) (λ (x) x)) (λ (x) false)) false)))))))))
  (term (λ (x) x)))
+
+
+;                                                                 
+;                                                                 
+;     ;;     ;;;                                ;                 
+;     ;;    ;   ;                               ;                 
+;     ;;   ;              ;;;   ;   ;  ; ;;   ;;;;;  ;;;;   ;   ; 
+;    ;  ;  ;             ;   ;  ;   ;  ;;  ;    ;        ;   ; ;  
+;    ;  ;  ;             ;       ; ;   ;   ;    ;        ;   ;;;  
+;    ;  ;  ;              ;;;    ; ;   ;   ;    ;     ;;;;    ;   
+;    ;  ;  ;                 ;   ; ;   ;   ;    ;    ;   ;   ;;;  
+;   ;    ;  ;   ;        ;   ;   ;;    ;   ;    ;    ;   ;   ; ;  
+;   ;    ;   ;;;          ;;;     ;    ;   ;    ;;;   ;;;;  ;   ; 
+;                                 ;                               
+;                                ;                                
+;                               ;;                                
+
+
+(define-extended-language ΛC
+  Λ
+  (e ::= .... (e ->i e) (mon j k l e e))
+  (j k l ::= x))
+
+(define-extended-language ΛC-eval
+  ΛC
+  (e ::= .... (mon j k e e) (grd j k ω v) (e · l))
+  (v ::= .... κ (grd j k ω v))
+  (κ ::= b (λ (x) e) (v ->i v))
+  (ω ::= true (v ->i v))
+  (E ::= .... (E ->i e) (v ->i E) (mon j k E e) (mon j k v E) (E · l)))
+
+
+;                                                                                      
+;                                          ;                                           
+;     ;;     ;;;                           ;                  ;       ;                
+;     ;;    ;   ;                          ;                  ;                        
+;     ;;   ;              ;;;;   ;;;    ;;;;  ;   ;   ;;;   ;;;;;   ;;;    ;;;   ; ;;  
+;    ;  ;  ;              ;;  ; ;;  ;  ;; ;;  ;   ;  ;;  ;    ;       ;   ;; ;;  ;;  ; 
+;    ;  ;  ;              ;     ;   ;; ;   ;  ;   ;  ;        ;       ;   ;   ;  ;   ; 
+;    ;  ;  ;              ;     ;;;;;; ;   ;  ;   ;  ;        ;       ;   ;   ;  ;   ; 
+;    ;  ;  ;              ;     ;      ;   ;  ;   ;  ;        ;       ;   ;   ;  ;   ; 
+;   ;    ;  ;   ;         ;     ;      ;; ;;  ;   ;  ;;       ;       ;   ;; ;;  ;   ; 
+;   ;    ;   ;;;          ;      ;;;;   ;;;;   ;;;;   ;;;;    ;;;   ;;;;;  ;;;   ;   ; 
+;                                                                                      
+;                                                                                      
+;                                                                                      
+
+
+(define -->ΛC
+  (extend-reduction-relation
+   -->Λ
+   ΛC-eval
+
+   [--> ((in-hole E (mon j k l e_κ e)) σ)
+        ((in-hole E ((mon j k e_κ e) · l)) σ)
+        mon-apply]
+
+   [--> ((in-hole E (mon j k true v)) σ)
+        ((in-hole E (grd j k true v)) σ)
+        mon-true]
+
+   [--> ((in-hole E (mon j k false v)) σ)
+        ((in-hole E (err j k)) σ)
+        mon-false]
+
+   [--> ((in-hole E (mon j k (λ (x) e) v)) σ)
+        ((in-hole E (mon j k ((λ (x) e) v) v)) σ)
+        mon-flat]
+
+   [--> ((in-hole E (mon j k (v_d ->i v_c) v)) σ)
+        ((in-hole E (grd j k (v_d ->i v_c) v)) σ)
+        mon-fun]
+
+   [--> ((in-hole E ((grd j k (v_d ->i v_c) v) · l)) σ)
+        ((in-hole E v) σ)
+        grd-true]
+
+   [--> ((in-hole E ((grd j k (v_d ->i v_c) v) · l)) σ)
+        ((in-hole E (λ (x) (term-let [x_g (mon j l v_d x)]
+                                     [x_j (x_g · j)]
+                                     [x_k (x_g · k)]
+                                     (mon j k l (v_c x_j) (v x_k))))) σ)
+        #;#;#;
+        (where x_g (mon j l v_d x))
+        (where x_j (x_g · j))
+        (where x_k (x_g · k))
+        grd-fun]
+
+   [--> ((in-hole E (mon j k v_κ v)) σ)
+        ((in-hole E (err runtime REPL)) σ)
+        (side-condition (not (redex-match? ΛC-eval κ (term v_κ))))
+        err-mon]))
 
 
 ;                                                                                             
