@@ -275,8 +275,10 @@
   (e ::= .... (e ->i e) (mon j k l e e))
   (j k l ::= x))
 
+(define-union-language ΛC∪Λ-eval ΛC Λ-eval)
+
 (define-extended-language ΛC-eval
-  ΛC
+  ΛC∪Λ-eval
   (e ::= .... (mon j k e e) (grd j k ω v) (e · l))
   (v ::= .... κ (grd j k ω v))
   (κ ::= b (λ (x) e) (v ->i v))
@@ -330,14 +332,10 @@
         grd-true]
 
    [--> ((in-hole E ((grd j k (v_d ->i v_c) v) · l)) σ)
-        ((in-hole E (λ (x) (term-let [x_g (mon j l v_d x)]
-                                     [x_j (x_g · j)]
-                                     [x_k (x_g · k)]
-                                     (mon j k l (v_c x_j) (v x_k))))) σ)
-        #;#;#;
-        (where x_g (mon j l v_d x))
-        (where x_j (x_g · j))
-        (where x_k (x_g · k))
+        ((in-hole E (λ (x) (mon j k l (v_c e_j) (v e_k)))) σ)
+        (where e_g (mon j l v_d x))
+        (where e_j (e_g · j))
+        (where e_k (e_g · k))
         grd-fun]
 
    [--> ((in-hole E (mon j k v_κ v)) σ)
@@ -371,7 +369,79 @@
 ;                                                          
 
 
+(test-equal
+ (term
+  (unload-ΛC
+   ,(first
+     (apply-reduction-relation*
+      -->ΛC
+      (load-ΛC (term ((λ (x) true) false)))))))
+ (term true))
 
+(test-equal
+ (term
+  (unload-ΛC
+   ,(first
+     (apply-reduction-relation*
+      -->ΛC
+      (load-ΛC (term (queue)))))))
+ (term 0))
+
+(test-equal
+ (term
+  (unload-ΛC
+   ,(first
+     (apply-reduction-relation*
+      -->ΛC
+      (load-ΛC (term (null? (queue))))))))
+ (term true))        
+
+(test-equal
+ (term
+  (unload-ΛC
+   ,(first
+     (apply-reduction-relation*
+      -->ΛC
+      (load-ΛC (term (head (add! (queue) false))))))))
+ (term false))
+
+(test-equal
+ (term
+  (unload-ΛC
+   ,(first
+     (apply-reduction-relation*
+      -->ΛC
+      (load-ΛC (term (tail (add! (queue) false))))))))
+ (term 1))
+
+(test-equal
+ (term
+  (unload-ΛC
+   ,(first
+     (apply-reduction-relation*
+      -->ΛC
+      (load-ΛC (term (head (add! (add! (queue) false) true))))))))
+ (term false))
+
+(test-equal
+ (term
+  (unload-ΛC
+   ,(first
+     (apply-reduction-relation*
+      -->ΛC
+      (load-ΛC (term (if (head (add! (add! (queue) false) true))
+                        true
+                        (head (add! (add! (add! (queue) (λ (x) x)) (λ (x) false)) false)))))))))
+ (term (λ (x) x)))
+
+;; example from paper, section 4.3
+(test-equal
+ (term
+  (unload-ΛC
+   ,(first
+     (apply-reduction-relation*
+      -->ΛC
+      (load-ΛC (term 
 
 
 ;                                                                                             
