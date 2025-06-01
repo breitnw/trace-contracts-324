@@ -187,8 +187,9 @@
     [else (raise "load: expected a valid program")]))
 
 (define-metafunction Λ-eval
-  unload-Λ : ζ -> v
-  [(unload-Λ (v σ)) v])
+  unload-Λ : ζ -> e
+  [(unload-Λ (v σ)) v]
+  [(unload-Λ ((err j k) σ)) (err j k)])
 
 
 ;
@@ -271,6 +272,17 @@
                         true
                         (head (add! (add! (add! (queue) (λ (x) x)) (λ (x) false)) false)))))))))
  (term (λ (x) x)))
+
+;; TODO: add tests that cause an error
+(test-equal
+ (term
+  (unload-Λ
+   ,(first
+     (apply-reduction-relation*
+      -->Λ
+      (load-Λ (term (true false)))))))
+ (term (err runtime REPL)))
+
 
 
 ;
@@ -381,8 +393,10 @@
     [else (raise "load: expected a valid program")]))
 
 (define-metafunction ΛC-eval
-  unload-ΛC : ζ -> v
-  [(unload-ΛC (v σ)) v])
+  unload-ΛC : ζ -> e
+  [(unload-ΛC (v σ)) v]
+  [(unload-ΛC ((err j k) σ)) (err j k)])
+
 
 ;
 ;
@@ -477,6 +491,7 @@
       (load-ΛC (term ?)))))))
 
 ;; TODO: write tests that actually use contracts
+
 ;; true and false as contracts (p. 15)
 (test-equal
  (term
@@ -505,10 +520,20 @@
       (load-ΛC (term ((mon ctc lib main true (λ (x) x)) true)))))))
  (term true))
 
+(test-equal
+ (term
+  (unload-ΛC
+   ,(first
+     (apply-reduction-relation*
+      -->ΛC
+      (load-ΛC (term (mon j k l false true)))))))
+ (term (err j k)))
+
 ;; functions as contracts
 ;; example that shows that effects aren't duplicated
 ;;   (maybe we just state that this is true; otherwise, we have to add effects to our language)
-;;
+;; example where contract itself is inconsistent, e.g.
+;;   `(bool? -> bool?) ->i (λ (f) (f 42))` from paper, p. 16
 
 ;; Program 4.1 from paper (p. 15)
 ;; TODO: need to add concept of equality to our language to make this work
