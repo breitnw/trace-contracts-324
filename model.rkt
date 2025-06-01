@@ -273,7 +273,7 @@
                         (head (add! (add! (add! (queue) (λ (x) x)) (λ (x) false)) false)))))))))
  (term (λ (x) x)))
 
-;; Errors
+;; Errors ======================================================================
 
 ;; err-app case
 ;; function application with a non-function
@@ -324,7 +324,6 @@
       -->Λ
       (load-Λ (term (tail (λ (x) x))))))))
  (term (err runtime REPL)))
-
 
 
 ;
