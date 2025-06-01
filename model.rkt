@@ -357,7 +357,7 @@
   Λ
   (e ::= ....
      (e ->i e)            ;; dependent function contract
-     (mon j k l e_k e_c)) ;; three-label monitor
+     (mon j k l e_κ e_c)) ;; three-label monitor
   (j k l ::= x))          ;; label
 
 ;; monitor labels:
@@ -581,10 +581,13 @@
  (term (err j k)))
 
 ;; functions as contracts
+;; predicate contracts (`mon j k (λ (x) e) v`)
+;; arrow contracts
 ;; example that shows that effects aren't duplicated
 ;;   (maybe we just state that this is true; otherwise, we have to add effects to our language)
 ;; example where contract itself is inconsistent, e.g.
 ;;   `(bool? -> bool?) ->i (λ (f) (f 42))` from paper, p. 16
+;; `(mon j k v_κ v)` where v_κ is not a contract (should error)
 
 ;; Program 4.1 from paper (p. 15)
 ;; TODO: need to add concept of equality to our language to make this work
@@ -760,6 +763,96 @@
 ;; TODO Function that accepts an alternating stream
 
 ;; TODO Function that produces an alternating stream
+
+
+;                                                                 
+;                                                                 
+;     ;;   ;    ;                               ;                 
+;     ;;   ;    ;                               ;                 
+;     ;;   ;    ;         ;;;   ;   ;  ; ;;   ;;;;;  ;;;;   ;   ; 
+;    ;  ;  ;    ;        ;   ;  ;   ;  ;;  ;    ;        ;   ; ;  
+;    ;  ;  ;    ;        ;       ; ;   ;   ;    ;        ;   ;;;  
+;    ;  ;  ;    ;         ;;;    ; ;   ;   ;    ;     ;;;;    ;   
+;    ;  ;  ;    ;            ;   ; ;   ;   ;    ;    ;   ;   ;;;  
+;   ;    ; ;    ;        ;   ;   ;;    ;   ;    ;    ;   ;   ; ;  
+;   ;    ;  ;;;;          ;;;     ;    ;   ;    ;;;   ;;;;  ;   ; 
+;                                 ;                               
+;                                ;                                
+;                               ;;                                
+
+
+(define-extended-language ΛU
+  Λ
+  (e ::= .... (tr e e e)))
+
+(define-union-language ΛU∪ΛC-eval ΛU ΛC-eval)
+
+(define-extended-language ΛU-eval
+  ΛU∪ΛC-eval
+  (e ::= .... (co v α v))
+  (κ ::= .... (tr v v v) (co v α v))
+  (E ::= .... (tr E e e) (tr v E e) (tr v v E))
+
+  )
+
+
+;                                                                                      
+;                                          ;                                           
+;     ;;   ;    ;                          ;                  ;       ;                
+;     ;;   ;    ;                          ;                  ;                        
+;     ;;   ;    ;         ;;;;   ;;;    ;;;;  ;   ;   ;;;   ;;;;;   ;;;    ;;;   ; ;;  
+;    ;  ;  ;    ;         ;;  ; ;;  ;  ;; ;;  ;   ;  ;;  ;    ;       ;   ;; ;;  ;;  ; 
+;    ;  ;  ;    ;         ;     ;   ;; ;   ;  ;   ;  ;        ;       ;   ;   ;  ;   ; 
+;    ;  ;  ;    ;         ;     ;;;;;; ;   ;  ;   ;  ;        ;       ;   ;   ;  ;   ; 
+;    ;  ;  ;    ;         ;     ;      ;   ;  ;   ;  ;        ;       ;   ;   ;  ;   ; 
+;   ;    ; ;    ;         ;     ;      ;; ;;  ;   ;  ;;       ;       ;   ;; ;;  ;   ; 
+;   ;    ;  ;;;;          ;      ;;;;   ;;;;   ;;;;   ;;;;    ;;;   ;;;;;  ;;;   ;   ; 
+;                                                                                      
+;                                                                                      
+;                                                                                      
+
+
+(define -->ΛU
+  (extend-reduction-relation
+   -->Λ
+   ΛU-eval
+
+   [-->((in-hole E (mon k j (tr v_κ v_b v_p))) σ)
+       ((in-hole E (mon k j v_b (co v_κ α v_p) v)) in-hole σ (α -> null))
+       mon-trace]
+   [--> ((in-hole E (mon k j (co v_κ α v_p) v)) σ)
+        ((in-hole E (add! α x_j (mon k j v_p α) v x_v)) σ)
+        (where x_j (mon k j v_κ v))
+        (where x_j (x_v · j))
+        mon-col]
+
+
+   )
+  )
+
+;                                                          
+;                                                          
+;     ;;   ;    ;          ;                    ;          
+;     ;;   ;    ;          ;                    ;          
+;     ;;   ;    ;        ;;;;;   ;;;    ;;;   ;;;;;   ;;;  
+;    ;  ;  ;    ;          ;    ;;  ;  ;   ;    ;    ;   ; 
+;    ;  ;  ;    ;          ;    ;   ;; ;        ;    ;     
+;    ;  ;  ;    ;          ;    ;;;;;;  ;;;     ;     ;;;  
+;    ;  ;  ;    ;          ;    ;          ;    ;        ; 
+;   ;    ; ;    ;          ;    ;      ;   ;    ;    ;   ; 
+;   ;    ;  ;;;;           ;;;   ;;;;   ;;;     ;;;   ;;;  
+;                                                          
+;                                                          
+;                                                          
+
+
+
+; TODO
+
+
+
+
+
 
 ;
 ;     ;        ;                                ;
