@@ -709,7 +709,7 @@
       -->ΛT
       (load-ΛT (term ((λ (f) (f false))
                       ((mon ctc lib main
-                            (tr (λ (coll) ((λ (arg) (bool=? arg false)) ->i coll))
+                            (tr (λ (coll) ((bool=? false) ->i coll))
                                 (λ (trace) true)))
                        (λ (x) false)))))))))
  (term false))
@@ -723,7 +723,7 @@
       -->ΛT
       (load-ΛT (term ((λ (f) (f true))
                       ((mon ctc lib main
-                            (tr (λ (coll) ((λ (arg) (bool=? arg false)) ->i coll))
+                            (tr (λ (coll) (bool=? false))
                                 (λ (trace) true)))
                        (λ (x) false)))))))))
  (term (err ctc main))) ;; main gets blamed
@@ -737,7 +737,7 @@
       -->ΛT
       (load-ΛT (term ((λ (f) (f false))
                       ((mon ctc lib main
-                            (tr (λ (coll) (coll ->i (λ (res) (bool=? res false))))
+                            (tr (λ (coll) (coll ->i (bool=? false)))
                                 (λ (trace) true)))
                        (λ (x) false)))))))))
  (term false))
@@ -751,7 +751,7 @@
       -->ΛT
       (load-ΛT (term ((λ (f) (f false))
                       ((mon ctc lib main
-                            (tr (λ (coll) (coll ->i (λ (res) (bool=? res false))))
+                            (tr (λ (coll) (coll ->i (bool=? false)))
                                 (λ (trace) true)))
                        (λ (x) true)))))))))
  ;; lib gets blamed
@@ -797,10 +797,10 @@
    ,(first
      (apply-reduction-relation*
       -->ΛT
-      (load-ΛT (term ((λ (f) (f false))
+      (load-ΛT (term ((λ (f) (f (f (f (f true)))))
                       ((mon ctc lib main
                             (tr (λ (coll) (coll ->i true))
-                                (λ (trace) (not (bool=?))))) ;; pred returns false
+                                (λ (trace) (not (bool=?)))))
                        (λ (x) true)))))))))
  ;; lib gets blamed, since it produced the collected value
  (term (err ctc lib)))
