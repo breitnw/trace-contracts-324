@@ -707,11 +707,11 @@
    ,(first
      (apply-reduction-relation*
       -->ΛT
-      (load-ΛT (term (((mon ctc lib main
+      (load-ΛT (term ((λ (f) (f false))
+                      ((mon ctc lib main
                             (tr (λ (coll) ((λ (arg) (bool=? arg false)) ->i coll))
                                 (λ (trace) true)))
-                       (λ (x) false))
-                      false)))))))
+                       (λ (x) false)))))))))
  (term false))
 
 ;; ... Above, but the argument is incorrect
@@ -721,11 +721,11 @@
    ,(first
      (apply-reduction-relation*
       -->ΛT
-      (load-ΛT (term (((mon ctc lib main
+      (load-ΛT (term ((λ (f) (f true))
+                      ((mon ctc lib main
                             (tr (λ (coll) ((λ (arg) (bool=? arg false)) ->i coll))
                                 (λ (trace) true)))
-                       (λ (x) false))
-                      true)))))))
+                       (λ (x) false)))))))))
  (term (err ctc main))) ;; main gets blamed
 
 ;; Trace contract that collects function arguments, accepts all traces
@@ -735,11 +735,11 @@
    ,(first
      (apply-reduction-relation*
       -->ΛT
-      (load-ΛT (term (((mon ctc lib main
+      (load-ΛT (term ((λ (f) (f false))
+                      ((mon ctc lib main
                             (tr (λ (coll) (coll ->i (λ (res) (bool=? res false))))
                                 (λ (trace) true)))
-                       (λ (x) false))
-                      false)))))))
+                       (λ (x) false)))))))))
  (term false))
 
 ;; ... Above, but function is incorrect
@@ -749,12 +749,13 @@
    ,(first
      (apply-reduction-relation*
       -->ΛT
-      (load-ΛT (term (((mon ctc lib main
+      (load-ΛT (term ((λ (f) (f false))
+                      ((mon ctc lib main
                             (tr (λ (coll) (coll ->i (λ (res) (bool=? res false))))
                                 (λ (trace) true)))
-                       (λ (x) true))
-                      false)))))))
- (term (err ctc lib))) ;; lib gets blamed
+                       (λ (x) true)))))))))
+ ;; lib gets blamed
+ (term (err ctc lib)))
 
 ;; Trace predicate tests =======================================================
 
@@ -765,12 +766,12 @@
    ,(first
      (apply-reduction-relation*
       -->ΛT
-      (load-ΛT (term (((mon ctc lib main
+      (load-ΛT (term ((λ (f) (f false))
+                      ((mon ctc lib main
                             (tr (λ (coll) (coll ->i true))
                                 (λ (trace) false))) ;; pred returns false
-                       (λ (x) true))
-                      false)))))))
- ;; main gets blamed, since it produced the collected (and rejected) value
+                       (λ (x) true)))))))))
+ ;; main gets blamed, since it produced the collected value
  (term (err ctc main)))
 
 ;; Trace contract that rejects all traces, blaming lib
@@ -780,16 +781,29 @@
    ,(first
      (apply-reduction-relation*
       -->ΛT
-      (load-ΛT (term (((mon ctc lib main
+      (load-ΛT (term ((λ (f) (f false))
+                      ((mon ctc lib main
                             (tr (λ (coll) (true ->i coll))
                                 (λ (trace) false))) ;; pred returns false
-                       (λ (x) true))
-                      false)))))))
- ;; lib gets blamed, since it produced the collected (and rejected) value
+                       (λ (x) true)))))))))
+
+ ;; lib gets blamed, since it produced the collected value
  (term (err ctc lib)))
 
-
-;; TODO Function that accepts an alternating stream
+;; Function that accepts an alternating stream
+(test-equal
+ (term
+  (unload-ΛT
+   ,(first
+     (apply-reduction-relation*
+      -->ΛT
+      (load-ΛT (term ((λ (f) (f false))
+                      ((mon ctc lib main
+                            (tr (λ (coll) (coll ->i true))
+                                (λ (trace) (not (bool=?))))) ;; pred returns false
+                       (λ (x) true)))))))))
+ ;; lib gets blamed, since it produced the collected value
+ (term (err ctc lib)))
 
 ;; TODO Function that produces an alternating stream
 
