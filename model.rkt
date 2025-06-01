@@ -4,20 +4,20 @@
 (require rackunit)
 
 
-;                                                          
-;                                                          
-;     ;;                                 ;                 
-;     ;;                                 ;                 
-;     ;;           ;;;   ;   ;  ; ;;   ;;;;;  ;;;;   ;   ; 
-;    ;  ;         ;   ;  ;   ;  ;;  ;    ;        ;   ; ;  
-;    ;  ;         ;       ; ;   ;   ;    ;        ;   ;;;  
-;    ;  ;          ;;;    ; ;   ;   ;    ;     ;;;;    ;   
-;    ;  ;             ;   ; ;   ;   ;    ;    ;   ;   ;;;  
-;   ;    ;        ;   ;   ;;    ;   ;    ;    ;   ;   ; ;  
-;   ;    ;         ;;;     ;    ;   ;    ;;;   ;;;;  ;   ; 
-;                          ;                               
-;                         ;                                
-;                        ;;                                
+;
+;
+;     ;;                                 ;
+;     ;;                                 ;
+;     ;;           ;;;   ;   ;  ; ;;   ;;;;;  ;;;;   ;   ;
+;    ;  ;         ;   ;  ;   ;  ;;  ;    ;        ;   ; ;
+;    ;  ;         ;       ; ;   ;   ;    ;        ;   ;;;
+;    ;  ;          ;;;    ; ;   ;   ;    ;     ;;;;    ;
+;    ;  ;             ;   ; ;   ;   ;    ;    ;   ;   ;;;
+;   ;    ;        ;   ;   ;;    ;   ;    ;    ;   ;   ; ;
+;   ;    ;         ;;;     ;    ;   ;    ;;;   ;;;;  ;   ;
+;                          ;
+;                         ;
+;                        ;;
 
 
 (define-language Λ
@@ -46,20 +46,20 @@
 ;; k names the party that violated the contract
 
 
-;                                                                                             
-;                                  ;;                                                         
-;  ;;  ;;           ;             ;                           ;       ;                       
-;  ;;  ;;           ;             ;                           ;                               
-;  ;;  ;;   ;;;   ;;;;;  ;;;;   ;;;;;  ;   ;  ; ;;    ;;;   ;;;;;   ;;;    ;;;   ; ;;    ;;;  
-;  ; ;; ;  ;;  ;    ;        ;    ;    ;   ;  ;;  ;  ;;  ;    ;       ;   ;; ;;  ;;  ;  ;   ; 
-;  ; ;; ;  ;   ;;   ;        ;    ;    ;   ;  ;   ;  ;        ;       ;   ;   ;  ;   ;  ;     
-;  ;    ;  ;;;;;;   ;     ;;;;    ;    ;   ;  ;   ;  ;        ;       ;   ;   ;  ;   ;   ;;;  
-;  ;    ;  ;        ;    ;   ;    ;    ;   ;  ;   ;  ;        ;       ;   ;   ;  ;   ;      ; 
-;  ;    ;  ;        ;    ;   ;    ;    ;   ;  ;   ;  ;;       ;       ;   ;; ;;  ;   ;  ;   ; 
-;  ;    ;   ;;;;    ;;;   ;;;;    ;     ;;;;  ;   ;   ;;;;    ;;;   ;;;;;  ;;;   ;   ;   ;;;  
-;                                                                                             
-;                                                                                             
-;                                                                                             
+;
+;                                  ;;
+;  ;;  ;;           ;             ;                           ;       ;
+;  ;;  ;;           ;             ;                           ;
+;  ;;  ;;   ;;;   ;;;;;  ;;;;   ;;;;;  ;   ;  ; ;;    ;;;   ;;;;;   ;;;    ;;;   ; ;;    ;;;
+;  ; ;; ;  ;;  ;    ;        ;    ;    ;   ;  ;;  ;  ;;  ;    ;       ;   ;; ;;  ;;  ;  ;   ;
+;  ; ;; ;  ;   ;;   ;        ;    ;    ;   ;  ;   ;  ;        ;       ;   ;   ;  ;   ;  ;
+;  ;    ;  ;;;;;;   ;     ;;;;    ;    ;   ;  ;   ;  ;        ;       ;   ;   ;  ;   ;   ;;;
+;  ;    ;  ;        ;    ;   ;    ;    ;   ;  ;   ;  ;        ;       ;   ;   ;  ;   ;      ;
+;  ;    ;  ;        ;    ;   ;    ;    ;   ;  ;   ;  ;;       ;       ;   ;; ;;  ;   ;  ;   ;
+;  ;    ;   ;;;;    ;;;   ;;;;    ;     ;;;;  ;   ;   ;;;;    ;;;   ;;;;;  ;;;   ;   ;   ;;;
+;
+;
+;
 
 
 (define-metafunction Λ-eval
@@ -104,7 +104,7 @@
   [(add ((α_1 u_1) ... (α_2 null) (α_3 u_3) ...) α_2 v)
    ((α_4 null) (α_1 u_1) ... (α_2 (cons v α_4)) (α_3 u_3) ...)
    (where α_4 (next ((α_1 u_1) ... (α_2 null) (α_3 u_3) ...)))]
-  
+
   [(add ((α_1 u_1) ... (α_2 (cons v_2 α_4)) (α_3 u_3) ...) α_2 v)
    (add σ_1 α_4 v)
    (where σ_1 ((α_1 u_1) ... (α_2 (cons v_2 α_4)) (α_3 u_3) ...))])
@@ -732,44 +732,151 @@
 ;
 ;
 
+;; Trace contract as a value
 (test-equal
  (term
   (unload-ΛT
    ,(first
      (apply-reduction-relation*
       -->ΛT
-      (load-ΛT (term (tr true true)))))))
+      (load-ΛT (term (tr (λ (coll) (coll ->i true)) true)))))))
  (term (tr true true)))
 
-;; Trace contract that accepts everything
+;; TODO example of ctc being blamed
 
-;; Trace contract that rejects everything
+;; Body contract tests =========================================================
 
-;; Trace contract that only accepts one value
+;; Note the modules in effect:
+;; - contract module :: ctc
+;; - server module   :: lib
+;; - client module   :: main
+
+;; Helper terms
+(define-term not (λ (x) (if x false true)))
+(define-term bool=? (λ (x) (λ (y) (if x y (not y)))))
+
+;; Trace contract that collects function results, accepts all traces
 (test-equal
  (term
   (unload-ΛT
    ,(first
      (apply-reduction-relation*
       -->ΛT
-      (load-ΛT (term (queue)))))))
- (term 0))
+      (load-ΛT (term ((λ (f) (f false))
+                      ((mon ctc lib main
+                            (tr (λ (coll) ((λ (arg) (bool=? arg false)) ->i coll))
+                                (λ (trace) true)))
+                       (λ (x) false)))))))))
+ (term false))
+
+;; ... Above, but the argument is incorrect
+(test-equal
+ (term
+  (unload-ΛT
+   ,(first
+     (apply-reduction-relation*
+      -->ΛT
+      (load-ΛT (term ((λ (f) (f true))
+                      ((mon ctc lib main
+                            (tr (λ (coll) ((λ (arg) (bool=? arg false)) ->i coll))
+                                (λ (trace) true)))
+                       (λ (x) false)))))))))
+ (term (err ctc main))) ;; main gets blamed
+
+;; Trace contract that collects function arguments, accepts all traces
+(test-equal
+ (term
+  (unload-ΛT
+   ,(first
+     (apply-reduction-relation*
+      -->ΛT
+      (load-ΛT (term ((λ (f) (f false))
+                      ((mon ctc lib main
+                            (tr (λ (coll) (coll ->i (λ (res) (bool=? res false))))
+                                (λ (trace) true)))
+                       (λ (x) false)))))))))
+ (term false))
+
+;; ... Above, but function is incorrect
+(test-equal
+ (term
+  (unload-ΛT
+   ,(first
+     (apply-reduction-relation*
+      -->ΛT
+      (load-ΛT (term ((λ (f) (f false))
+                      ((mon ctc lib main
+                            (tr (λ (coll) (coll ->i (λ (res) (bool=? res false))))
+                                (λ (trace) true)))
+                       (λ (x) true)))))))))
+ ;; lib gets blamed
+ (term (err ctc lib)))
+
+;; Trace predicate tests =======================================================
+
+;; Trace contract that rejects all traces, blaming main
+(test-equal
+ (term
+  (unload-ΛT
+   ,(first
+     (apply-reduction-relation*
+      -->ΛT
+      (load-ΛT (term ((λ (f) (f false))
+                      ((mon ctc lib main
+                            (tr (λ (coll) (coll ->i true))
+                                (λ (trace) false))) ;; pred returns false
+                       (λ (x) true)))))))))
+ ;; main gets blamed, since it produced the collected value
+ (term (err ctc main)))
+
+;; Trace contract that rejects all traces, blaming lib
+(test-equal
+ (term
+  (unload-ΛT
+   ,(first
+     (apply-reduction-relation*
+      -->ΛT
+      (load-ΛT (term ((λ (f) (f false))
+                      ((mon ctc lib main
+                            (tr (λ (coll) (true ->i coll))
+                                (λ (trace) false))) ;; pred returns false
+                       (λ (x) true)))))))))
+
+ ;; lib gets blamed, since it produced the collected value
+ (term (err ctc lib)))
+
+;; Function that accepts an alternating stream
+(test-equal
+ (term
+  (unload-ΛT
+   ,(first
+     (apply-reduction-relation*
+      -->ΛT
+      (load-ΛT (term ((λ (f) (f false))
+                      ((mon ctc lib main
+                            (tr (λ (coll) (coll ->i true))
+                                (λ (trace) (not (bool=?))))) ;; pred returns false
+                       (λ (x) true)))))))))
+ ;; lib gets blamed, since it produced the collected value
+ (term (err ctc lib)))
+
+;; TODO Function that produces an alternating stream
 
 
-;                                                                 
-;                                                                 
-;     ;;   ;    ;                               ;                 
-;     ;;   ;    ;                               ;                 
-;     ;;   ;    ;         ;;;   ;   ;  ; ;;   ;;;;;  ;;;;   ;   ; 
-;    ;  ;  ;    ;        ;   ;  ;   ;  ;;  ;    ;        ;   ; ;  
-;    ;  ;  ;    ;        ;       ; ;   ;   ;    ;        ;   ;;;  
-;    ;  ;  ;    ;         ;;;    ; ;   ;   ;    ;     ;;;;    ;   
-;    ;  ;  ;    ;            ;   ; ;   ;   ;    ;    ;   ;   ;;;  
-;   ;    ; ;    ;        ;   ;   ;;    ;   ;    ;    ;   ;   ; ;  
-;   ;    ;  ;;;;          ;;;     ;    ;   ;    ;;;   ;;;;  ;   ; 
-;                                 ;                               
-;                                ;                                
-;                               ;;                                
+;
+;
+;     ;;   ;    ;                               ;
+;     ;;   ;    ;                               ;
+;     ;;   ;    ;         ;;;   ;   ;  ; ;;   ;;;;;  ;;;;   ;   ;
+;    ;  ;  ;    ;        ;   ;  ;   ;  ;;  ;    ;        ;   ; ;
+;    ;  ;  ;    ;        ;       ; ;   ;   ;    ;        ;   ;;;
+;    ;  ;  ;    ;         ;;;    ; ;   ;   ;    ;     ;;;;    ;
+;    ;  ;  ;    ;            ;   ; ;   ;   ;    ;    ;   ;   ;;;
+;   ;    ; ;    ;        ;   ;   ;;    ;   ;    ;    ;   ;   ; ;
+;   ;    ;  ;;;;          ;;;     ;    ;   ;    ;;;   ;;;;  ;   ;
+;                                 ;
+;                                ;
+;                               ;;
 
 
 (define-extended-language ΛU
@@ -787,20 +894,20 @@
   )
 
 
-;                                                                                      
-;                                          ;                                           
-;     ;;   ;    ;                          ;                  ;       ;                
-;     ;;   ;    ;                          ;                  ;                        
-;     ;;   ;    ;         ;;;;   ;;;    ;;;;  ;   ;   ;;;   ;;;;;   ;;;    ;;;   ; ;;  
-;    ;  ;  ;    ;         ;;  ; ;;  ;  ;; ;;  ;   ;  ;;  ;    ;       ;   ;; ;;  ;;  ; 
-;    ;  ;  ;    ;         ;     ;   ;; ;   ;  ;   ;  ;        ;       ;   ;   ;  ;   ; 
-;    ;  ;  ;    ;         ;     ;;;;;; ;   ;  ;   ;  ;        ;       ;   ;   ;  ;   ; 
-;    ;  ;  ;    ;         ;     ;      ;   ;  ;   ;  ;        ;       ;   ;   ;  ;   ; 
-;   ;    ; ;    ;         ;     ;      ;; ;;  ;   ;  ;;       ;       ;   ;; ;;  ;   ; 
-;   ;    ;  ;;;;          ;      ;;;;   ;;;;   ;;;;   ;;;;    ;;;   ;;;;;  ;;;   ;   ; 
-;                                                                                      
-;                                                                                      
-;                                                                                      
+;
+;                                          ;
+;     ;;   ;    ;                          ;                  ;       ;
+;     ;;   ;    ;                          ;                  ;
+;     ;;   ;    ;         ;;;;   ;;;    ;;;;  ;   ;   ;;;   ;;;;;   ;;;    ;;;   ; ;;
+;    ;  ;  ;    ;         ;;  ; ;;  ;  ;; ;;  ;   ;  ;;  ;    ;       ;   ;; ;;  ;;  ;
+;    ;  ;  ;    ;         ;     ;   ;; ;   ;  ;   ;  ;        ;       ;   ;   ;  ;   ;
+;    ;  ;  ;    ;         ;     ;;;;;; ;   ;  ;   ;  ;        ;       ;   ;   ;  ;   ;
+;    ;  ;  ;    ;         ;     ;      ;   ;  ;   ;  ;        ;       ;   ;   ;  ;   ;
+;   ;    ; ;    ;         ;     ;      ;; ;;  ;   ;  ;;       ;       ;   ;; ;;  ;   ;
+;   ;    ;  ;;;;          ;      ;;;;   ;;;;   ;;;;   ;;;;    ;;;   ;;;;;  ;;;   ;   ;
+;
+;
+;
 
 #;
 (define -->ΛU
@@ -808,32 +915,33 @@
    -->Λ
    ΛU-eval
 
-   [-->(in-hole E (mon k j (tr v_κ v_b v_p)) σ)
-       (in-hole E (mon k j v_b (co v_κ α v_p) v) in-hole σ (α -> null))
-    mon-trace]
-   [--> (in-hole E (mon k j (co v_κ α v_p) v) σ)
-        (in-hole E ())
-    mon-col]
+   [-->((in-hole E (mon k j (tr v_κ v_b v_p))) σ)
+       ((in-hole E (mon k j v_b (co v_κ α v_p) v)) in-hole σ (α -> null))
+       mon-trace]
+   [--> ((in-hole E (mon k j (co v_κ α v_p) v)) σ)
+        ((in-hole E (add! α x_j (mon k j v_p α) v x_v)) σ)
+        (where x_j (mon k j v_κ v))
+        (where x_j (x_v · j))
+        mon-col]
 
 
    )
   )
 
-
-;                                                          
-;                                                          
-;     ;;   ;    ;          ;                    ;          
-;     ;;   ;    ;          ;                    ;          
-;     ;;   ;    ;        ;;;;;   ;;;    ;;;   ;;;;;   ;;;  
-;    ;  ;  ;    ;          ;    ;;  ;  ;   ;    ;    ;   ; 
-;    ;  ;  ;    ;          ;    ;   ;; ;        ;    ;     
-;    ;  ;  ;    ;          ;    ;;;;;;  ;;;     ;     ;;;  
-;    ;  ;  ;    ;          ;    ;          ;    ;        ; 
-;   ;    ; ;    ;          ;    ;      ;   ;    ;    ;   ; 
-;   ;    ;  ;;;;           ;;;   ;;;;   ;;;     ;;;   ;;;  
-;                                                          
-;                                                          
-;                                                          
+;
+;
+;     ;;   ;    ;          ;                    ;
+;     ;;   ;    ;          ;                    ;
+;     ;;   ;    ;        ;;;;;   ;;;    ;;;   ;;;;;   ;;;
+;    ;  ;  ;    ;          ;    ;;  ;  ;   ;    ;    ;   ;
+;    ;  ;  ;    ;          ;    ;   ;; ;        ;    ;
+;    ;  ;  ;    ;          ;    ;;;;;;  ;;;     ;     ;;;
+;    ;  ;  ;    ;          ;    ;          ;    ;        ;
+;   ;    ; ;    ;          ;    ;      ;   ;    ;    ;   ;
+;   ;    ;  ;;;;           ;;;   ;;;;   ;;;     ;;;   ;;;
+;
+;
+;
 
 
 
