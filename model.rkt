@@ -268,14 +268,26 @@
 
 (define-extended-language ΛC
   Λ
-  (e ::= .... (e ->i e) (mon j k l e e))
-  (j k l ::= x))
+  (e ::= ....
+     (e ->i e)            ;; dependent function contract
+     (mon j k l e_k e_c)) ;; three-label monitor
+  (j k l ::= x))          ;; label
+
+;; monitor labels:
+;; - j :: contract-defining module
+;; - k :: server module
+;; - l :: client module
 
 (define-union-language ΛC∪Λ-eval ΛC Λ-eval)
 
 (define-extended-language ΛC-eval
-  ΛC∪Λ-eval ;; inherit surface syntax from ΛC and evaluation syntax from Λ-eval
-  (e ::= .... (mon j k e e) (grd j k ω v) (e · l))
+  ;; inherit surface syntax from ΛC and evaluation syntax from Λ-eval
+  ΛC∪Λ-eval
+  (e ::= ....
+     (mon j k e e)        ;; two-label monitor
+     (grd j k ω v)        ;; guard
+     (e · l))             ;; label application
+
   (v ::= .... κ (grd j k ω v))
   (κ ::= b (λ (x) e) (v ->i v))
   (ω ::= true (v ->i v))
@@ -456,15 +468,25 @@
 
 (define-extended-language ΛT
   Λ
-  (e ::= .... (tr e e)))
+  (e ::= .... (tr e_κ e_p))) ;; trace contract
+
+;; trace contract parameters:
+;; - e_κ :: body-contract constructor. function that, provided with a collector,
+;;          returns a body contract
+;; - e_p :: trace predicate
 
 (define-union-language ΛT∪ΛC-eval ΛT ΛC-eval)
 
 (define-extended-language ΛT-eval
-  ΛT∪ΛC-eval ;; surface syntax from ΛT and evaluation syntax from ΛC-eval
-  (e ::= .... (co α v))
+  ;; surface syntax from ΛT and evaluation syntax from ΛC-eval
+  ΛT∪ΛC-eval
+  (e ::= .... (co α v_p))
   (κ ::= (tr v v) (co α v))
   (E ::= .... (tr E e) (tr v E)))
+
+;; collector parameters:
+;; - α :: address of trace in the store
+;; - v :: trace predicate
 
 ;
 ;                                          ;
@@ -481,7 +503,21 @@
 ;
 ;
 
-;; TODO
+(define -->ΛT
+  (extend-reduction-relation
+   -->ΛC
+   ΛT-eval
+   ;; TODO
+   ))
+
+(define (load-ΛT p)
+  (cond
+    [(redex-match? ΛT e p) (term (,p ()))]
+    [else (raise "load: expected a valid program")]))
+
+(define-metafunction ΛT-eval
+  unload-ΛT : ζ -> v
+  [(unload-ΛT (v σ)) v])
 
 ;
 ;
@@ -498,7 +534,28 @@
 ;
 ;
 
-;; TODO
+(test-equal
+ (term
+  (unload-ΛT
+   ,(first
+     (apply-reduction-relation*
+      -->ΛT
+      (load-ΛT (term (tr true true)))))))
+ (term (tr true true)))
+
+;; Trace contract that accepts everything
+
+;; Trace contract that rejects everything
+
+;; Trace contract that only accepts one value
+(test-equal
+ (term
+  (unload-ΛT
+   ,(first
+     (apply-reduction-relation*
+      -->ΛT
+      (load-ΛT (term (queue)))))))
+ (term 0))
 
 ;
 ;     ;        ;                                ;
