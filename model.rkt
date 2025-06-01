@@ -184,7 +184,7 @@
 (define (load-Λ p)
   (cond
     [(redex-match? Λ e p) (term (,p ()))]
-    [else (raise "load: expected a valid program")]))
+    [else (raise (string-append "load: expected a valid program, received: " (~a p)))]))
 
 (define-metafunction Λ-eval
   unload-Λ : ζ -> e
@@ -273,7 +273,10 @@
                         (head (add! (add! (add! (queue) (λ (x) x)) (λ (x) false)) false)))))))))
  (term (λ (x) x)))
 
-;; TODO: add tests that cause an error
+;; Errors
+
+;; err-app case
+;; function application with a non-function
 (test-equal
  (term
   (unload-Λ
@@ -281,6 +284,45 @@
      (apply-reduction-relation*
       -->Λ
       (load-Λ (term (true false)))))))
+ (term (err runtime REPL)))
+
+;; err-add! case
+;; attempting to add to a non-address
+(test-equal
+ (term
+  (unload-Λ
+   ,(first
+     (apply-reduction-relation*
+      -->Λ
+      (load-Λ (term (add! true true)))))))
+ (term (err runtime REPL)))
+
+;; primitive operation errors
+(test-equal
+ (term
+  (unload-Λ
+   ,(first
+     (apply-reduction-relation*
+      -->Λ
+      (load-Λ (term (null? true)))))))
+ (term (err runtime REPL)))
+
+(test-equal
+ (term
+  (unload-Λ
+   ,(first
+     (apply-reduction-relation*
+      -->Λ
+      (load-Λ (term (head false)))))))
+ (term (err runtime REPL)))
+
+(test-equal
+ (term
+  (unload-Λ
+   ,(first
+     (apply-reduction-relation*
+      -->Λ
+      (load-Λ (term (tail (λ (x) x))))))))
  (term (err runtime REPL)))
 
 
@@ -390,7 +432,7 @@
 (define (load-ΛC p)
   (cond
     [(redex-match? ΛC e p) (term (,p ()))]
-    [else (raise "load: expected a valid program")]))
+    [else (raise (string-append "load: expected a valid program, received: " (~a p)))]))
 
 (define-metafunction ΛC-eval
   unload-ΛC : ζ -> e
