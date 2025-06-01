@@ -454,7 +454,17 @@
 ;                                ;
 ;                               ;;
 
-;; TODO
+(define-extended-language ΛT
+  Λ
+  (e ::= .... (tr e e)))
+
+(define-union-language ΛT∪ΛC-eval ΛT ΛC-eval)
+
+(define-extended-language ΛT-eval
+  ΛT∪ΛC-eval ;; surface syntax from ΛT and evaluation syntax from ΛC-eval
+  (e ::= .... (co α v))
+  (κ ::= (tr v v) (co α v))
+  (E ::= .... (tr E e) (tr v E)))
 
 ;
 ;                                          ;
