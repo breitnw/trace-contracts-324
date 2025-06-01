@@ -4,20 +4,20 @@
 (require rackunit)
 
 
-;
-;
-;    ;;;;                  ;
-;   ;;   ;                 ;
-;   ;      ;   ;  ; ;;   ;;;;;  ;;;;   ;   ;
-;   ;;     ;   ;  ;;  ;    ;        ;   ; ;
-;    ;;;;   ; ;   ;   ;    ;        ;   ;;;
-;        ;  ; ;   ;   ;    ;     ;;;;    ;
-;        ;  ; ;   ;   ;    ;    ;   ;   ;;;
-;   ;    ;  ;;    ;   ;    ;    ;   ;   ; ;
-;    ;;;;    ;    ;   ;    ;;;   ;;;;  ;   ;
-;            ;
-;           ;
-;          ;;
+;                                                          
+;                                                          
+;     ;;                                 ;                 
+;     ;;                                 ;                 
+;     ;;           ;;;   ;   ;  ; ;;   ;;;;;  ;;;;   ;   ; 
+;    ;  ;         ;   ;  ;   ;  ;;  ;    ;        ;   ; ;  
+;    ;  ;         ;       ; ;   ;   ;    ;        ;   ;;;  
+;    ;  ;          ;;;    ; ;   ;   ;    ;     ;;;;    ;   
+;    ;  ;             ;   ; ;   ;   ;    ;    ;   ;   ;;;  
+;   ;    ;        ;   ;   ;;    ;   ;    ;    ;   ;   ; ;  
+;   ;    ;         ;;;     ;    ;   ;    ;;;   ;;;;  ;   ; 
+;                          ;                               
+;                         ;                                
+;                        ;;                                
 
 
 (define-language Λ
@@ -41,19 +41,42 @@
   (α ::= natural)
   (j k l ::= x))
 
-;; I don't think the syntax is exactly correct here, but the idea is there
+;; `(err j k)` denotes an error with two labels:
+;; j names the party that specified the violated contract, and
+;; k names the party that violated the contract
+
+
+;                                                                                             
+;                                  ;;                                                         
+;  ;;  ;;           ;             ;                           ;       ;                       
+;  ;;  ;;           ;             ;                           ;                               
+;  ;;  ;;   ;;;   ;;;;;  ;;;;   ;;;;;  ;   ;  ; ;;    ;;;   ;;;;;   ;;;    ;;;   ; ;;    ;;;  
+;  ; ;; ;  ;;  ;    ;        ;    ;    ;   ;  ;;  ;  ;;  ;    ;       ;   ;; ;;  ;;  ;  ;   ; 
+;  ; ;; ;  ;   ;;   ;        ;    ;    ;   ;  ;   ;  ;        ;       ;   ;   ;  ;   ;  ;     
+;  ;    ;  ;;;;;;   ;     ;;;;    ;    ;   ;  ;   ;  ;        ;       ;   ;   ;  ;   ;   ;;;  
+;  ;    ;  ;        ;    ;   ;    ;    ;   ;  ;   ;  ;        ;       ;   ;   ;  ;   ;      ; 
+;  ;    ;  ;        ;    ;   ;    ;    ;   ;  ;   ;  ;;       ;       ;   ;; ;;  ;   ;  ;   ; 
+;  ;    ;   ;;;;    ;;;   ;;;;    ;     ;;;;  ;   ;   ;;;;    ;;;   ;;;;;  ;;;   ;   ;   ;;;  
+;                                                                                             
+;                                                                                             
+;                                                                                             
+
+
 (define-metafunction Λ-eval
   delta : o v σ -> e
+  ;; null?
   [(delta null? α ((α_1 u_1) ... (α null) (α_2 u_2) ...))
    true]
   [(delta null? α ((α_1 u_1) ... (α (cons v α_3)) (α_2 u_2) ...))
    false]
 
+  ;; head
   [(delta head α ((α_1 u_1) ... (α null) (α_2 u_2) ...))
    (err runtime REPL)]
   [(delta head α ((α_1 u_1) ... (α (cons v α_3)) (α_2 u_2) ...))
    v]
 
+  ;; tail
   [(delta tail α ((α_1 u_1) ... (α null) (α_2 u_2) ...))
    (err runtime REPL)]
   [(delta tail α ((α_1 u_1) ... (α (cons v α_3)) (α_2 u_2) ...))
@@ -63,15 +86,12 @@
   [(delta o v σ)
    (err runtime REPL)])
 
-
 (define-metafunction Λ-eval
   next : σ -> α
-  [(next ()) ,0]
+  [(next ())
+   ,0]
   [(next ((α_1 u_1) (α_2 u_2) ...))
    ,(+ 1 (term α_1))])
-
-
-;; TODO: write unit tests for `next`
 
 (define-metafunction Λ-eval
   extend : σ -> σ
@@ -84,6 +104,7 @@
   [(add ((α_1 u_1) ... (α_2 null) (α_3 u_3) ...) α_2 v)
    ((α_4 null) (α_1 u_1) ... (α_2 (cons v α_4)) (α_3 u_3) ...)
    (where α_4 (next ((α_1 u_1) ... (α_2 null) (α_3 u_3) ...)))]
+  
   [(add ((α_1 u_1) ... (α_2 (cons v_2 α_4)) (α_3 u_3) ...) α_2 v)
    (add σ_1 α_4 v)
    (where σ_1 ((α_1 u_1) ... (α_2 (cons v_2 α_4)) (α_3 u_3) ...))])
@@ -137,6 +158,8 @@
         ((in-hole E α) (add σ α v))
         add!]
 
+   ;; TODO/question: will hardcoding `(err runtime REPL)` cause issues when we
+   ;; get to a language that can have more nuanced errors?
    [--> ((in-hole E (v_f v)) σ)
         ((in-hole E (err runtime REPL)) σ)
         ;; rule only fires if `v_f` is not a function
@@ -266,9 +289,22 @@
 ;                               ;;
 
 
+; `(e_d ->i e_c)` is a dependent function contract.
+; The codomain contract, e_c, can depend on the argument to the protected function.
+
+; `(mon j k l e_κ e_c)` is a monitor that attaches contract e_κ to e_c.
+; The value of e_c is dubbed the "carrier" of the contract.
+; j, k, and l are labels that name the parties that agreed to the contract:
+; j is the contract-defining module,
+; k is the server module, and
+; l is the client module.
+
 (define-extended-language ΛC
   Λ
-  (e ::= .... (e ->i e) (mon j k l e e))
+  (e ::= ....
+     (e ->i e)
+     (mon j k l e e)
+     )
   (j k l ::= x))
 
 (define-union-language ΛC∪Λ-eval ΛC Λ-eval)
@@ -364,6 +400,7 @@
 ;
 
 
+;; Λ tests using -->ΛC to make sure that ΛC correctly *extends* Λ
 (test-equal
  (term
   (unload-ΛC
@@ -438,6 +475,48 @@
      (apply-reduction-relation*
       -->ΛC
       (load-ΛC (term ?)))))))
+
+;; TODO: write tests that actually use contracts
+;; true and false as contracts (p. 15)
+
+(traces -->ΛC (load-ΛC (term (mon j k l true false))))
+
+(test-equal
+ (term
+  (unload-ΛC
+   ,(first
+     (apply-reduction-relation*
+      -->ΛC
+      (load-ΛC (term (mon j k l true false)))))))
+ (term false))
+
+(test-equal
+ (term
+  (unload-ΛC
+   ,(first
+     (apply-reduction-relation*
+      -->ΛC
+      (load-ΛC (term (mon ctc lib main true false)))))))
+ (term false))
+
+(test-equal
+ (term
+  (unload-ΛC
+   ,(first
+     (apply-reduction-relation*
+      -->ΛC
+      (load-ΛC (term ((mon ctc lib main true (λ (x) x)) true)))))))
+ (term true))
+
+;; functions as contracts
+;; example that shows that effects aren't duplicated
+;;   (maybe we just state that this is true; otherwise, we have to add effects to our language)
+;;
+
+;; Program 4.1 from paper (p. 15)
+;; TODO: need to add concept of equality to our language to make this work
+;(mon ctc lib main (true ->i (λ (x) (λ (y) x == y))) (λ (z) z))
+
 
 ;
 ;
