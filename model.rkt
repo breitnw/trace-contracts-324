@@ -438,6 +438,7 @@
         (side-condition (not (redex-match? ΛC-eval κ (term v_κ))))
         err-mon]))
 
+
 (define (load-ΛC p)
   (cond
     [(redex-match? ΛC e p) (term (,p ()))]
@@ -577,17 +578,71 @@
    ,(first
      (apply-reduction-relation*
       -->ΛC
+      (load-ΛC (term (mon j k l (if true true (queue)) (λ (x) x))))))))
+ (term (λ (x) x)))
+
+(test-equal
+ (term
+  (unload-ΛC
+   ,(first
+     (apply-reduction-relation*
+      -->ΛC
       (load-ΛC (term (mon j k l false true)))))))
  (term (err j k)))
 
 ;; functions as contracts
+
 ;; predicate contracts (`mon j k (λ (x) e) v`)
+
 ;; arrow contracts
+
 ;; example that shows that effects aren't duplicated
 ;;   (maybe we just state that this is true; otherwise, we have to add effects to our language)
+;;   could we use `add!` as our effect? idk how to check that `add!` is only called once though
+
 ;; example where contract itself is inconsistent, e.g.
 ;;   `(bool? -> bool?) ->i (λ (f) (f 42))` from paper, p. 16
+
 ;; `(mon j k v_κ v)` where v_κ is not a contract (should error)
+;; i.e. attempting to attach something that's not a contract to an expression
+
+;; attempting to attach an address (rather than a contract) to an expression
+(test-equal
+ (term
+  (unload-ΛC
+   ,(first
+     (apply-reduction-relation*
+      -->ΛC
+      (load-ΛC (term (mon j k l (queue) true)))))))
+ (term (err runtime REPL)))
+
+(test-equal
+ (term
+  (unload-ΛC
+   ,(first
+     (apply-reduction-relation*
+      -->ΛC
+      (load-ΛC (term (mon j k l (add! (queue) false) true)))))))
+ (term (err runtime REPL)))
+
+(test-equal
+ (term
+  (unload-ΛC
+   ,(first
+     (apply-reduction-relation*
+      -->ΛC
+      (load-ΛC (term (mon j k l (if true (queue) true) (λ (x) x))))))))
+ (term (err runtime REPL)))
+
+(test-equal
+ (term
+  (unload-ΛC
+   ,(first
+     (apply-reduction-relation*
+      -->ΛC
+      (load-ΛC (term (mon j k l (if false true (queue)) (λ (x) x))))))))
+ (term (err runtime REPL)))
+
 
 ;; Program 4.1 from paper (p. 15)
 ;; TODO: need to add concept of equality to our language to make this work
@@ -747,7 +802,7 @@
 ;                                                                                      
 ;                                                                                      
 
-
+#;
 (define -->ΛU
   (extend-reduction-relation
    -->Λ
