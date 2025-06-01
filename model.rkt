@@ -359,7 +359,7 @@
         ((in-hole E (grd j k (v_d ->i v_c) v)) σ)
         mon-fun]
 
-   [--> ((in-hole E ((grd j k (v_d ->i v_c) v) · l)) σ)
+   [--> ((in-hole E ((grd j k true v) · l)) σ)
         ((in-hole E v) σ)
         grd-true]
 
@@ -478,9 +478,6 @@
 
 ;; TODO: write tests that actually use contracts
 ;; true and false as contracts (p. 15)
-
-(traces -->ΛC (load-ΛC (term (mon j k l true false))))
-
 (test-equal
  (term
   (unload-ΛC
