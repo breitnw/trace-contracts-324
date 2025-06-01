@@ -758,7 +758,36 @@
 
 ;; Trace predicate tests =======================================================
 
-;; TODO Trace contract that rejects all traces
+;; Trace contract that rejects all traces, blaming main
+(test-equal
+ (term
+  (unload-ΛT
+   ,(first
+     (apply-reduction-relation*
+      -->ΛT
+      (load-ΛT (term (((mon ctc lib main
+                            (tr (λ (coll) (coll ->i true))
+                                (λ (trace) false))) ;; pred returns false
+                       (λ (x) true))
+                      false)))))))
+ ;; main gets blamed, since it produced the collected (and rejected) value
+ (term (err ctc main)))
+
+;; Trace contract that rejects all traces, blaming lib
+(test-equal
+ (term
+  (unload-ΛT
+   ,(first
+     (apply-reduction-relation*
+      -->ΛT
+      (load-ΛT (term (((mon ctc lib main
+                            (tr (λ (coll) (true ->i coll))
+                                (λ (trace) false))) ;; pred returns false
+                       (λ (x) true))
+                      false)))))))
+ ;; lib gets blamed, since it produced the collected (and rejected) value
+ (term (err ctc lib)))
+
 
 ;; TODO Function that accepts an alternating stream
 
