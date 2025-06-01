@@ -357,7 +357,7 @@
   Λ
   (e ::= ....
      (e ->i e)            ;; dependent function contract
-     (mon j k l e_k e_c)) ;; three-label monitor
+     (mon j k l e_κ e_c)) ;; three-label monitor
   (j k l ::= x))          ;; label
 
 ;; monitor labels:
@@ -581,10 +581,13 @@
  (term (err j k)))
 
 ;; functions as contracts
+;; predicate contracts (`mon j k (λ (x) e) v`)
+;; arrow contracts
 ;; example that shows that effects aren't duplicated
 ;;   (maybe we just state that this is true; otherwise, we have to add effects to our language)
 ;; example where contract itself is inconsistent, e.g.
 ;;   `(bool? -> bool?) ->i (λ (f) (f 42))` from paper, p. 16
+;; `(mon j k v_κ v)` where v_κ is not a contract (should error)
 
 ;; Program 4.1 from paper (p. 15)
 ;; TODO: need to add concept of equality to our language to make this work
