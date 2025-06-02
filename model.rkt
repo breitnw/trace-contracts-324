@@ -179,7 +179,7 @@
         err-unwind]))
 
 
-;; Load and unload
+;; Load, unload, eval
 
 (define (load-Λ p)
   (cond
@@ -191,6 +191,13 @@
   [(unload-Λ (v σ)) v]
   [(unload-Λ ((err j k) σ)) (err j k)])
 
+(define (eval-Λ t)
+  (term
+   (unload-Λ
+    ,(first
+      (apply-reduction-relation*
+       -->Λ
+       (load-Λ t))))))
 
 ;
 ;
@@ -209,68 +216,33 @@
 
 
 (test-equal
- (term
-  (unload-Λ
-   ,(first
-     (apply-reduction-relation*
-      -->Λ
-      (load-Λ (term ((λ (x) true) false)))))))
+ (eval-Λ (term ((λ (x) true) false)))
  (term true))
 
 (test-equal
- (term
-  (unload-Λ
-   ,(first
-     (apply-reduction-relation*
-      -->Λ
-      (load-Λ (term (queue)))))))
+ (eval-Λ (term (queue)))
  (term 0))
 
 (test-equal
- (term
-  (unload-Λ
-   ,(first
-     (apply-reduction-relation*
-      -->Λ
-      (load-Λ (term (null? (queue))))))))
+ (eval-Λ (term (null? (queue))))
  (term true))
 
 (test-equal
- (term
-  (unload-Λ
-   ,(first
-     (apply-reduction-relation*
-      -->Λ
-      (load-Λ (term (head (add! (queue) false))))))))
+ (eval-Λ (term (head (add! (queue) false))))
  (term false))
 
 (test-equal
- (term
-  (unload-Λ
-   ,(first
-     (apply-reduction-relation*
-      -->Λ
-      (load-Λ (term (tail (add! (queue) false))))))))
+ (eval-Λ (term (tail (add! (queue) false))))
  (term 1))
 
 (test-equal
- (term
-  (unload-Λ
-   ,(first
-     (apply-reduction-relation*
-      -->Λ
-      (load-Λ (term (head (add! (add! (queue) false) true))))))))
+ (eval-Λ (term (head (add! (add! (queue) false) true))))
  (term false))
 
 (test-equal
- (term
-  (unload-Λ
-   ,(first
-     (apply-reduction-relation*
-      -->Λ
-      (load-Λ (term (if (head (add! (add! (queue) false) true))
-                        true
-                        (head (add! (add! (add! (queue) (λ (x) x)) (λ (x) false)) false)))))))))
+ (eval-Λ (term (if (head (add! (add! (queue) false) true))
+                   true
+                   (head (add! (add! (add! (queue) (λ (x) x)) (λ (x) false)) false)))))
  (term (λ (x) x)))
 
 ;; Errors ======================================================================
@@ -278,51 +250,26 @@
 ;; err-app case
 ;; function application with a non-function
 (test-equal
- (term
-  (unload-Λ
-   ,(first
-     (apply-reduction-relation*
-      -->Λ
-      (load-Λ (term (true false)))))))
+ (eval-Λ (term (true false)))
  (term (err runtime REPL)))
 
 ;; err-add! case
 ;; attempting to add to a non-address
 (test-equal
- (term
-  (unload-Λ
-   ,(first
-     (apply-reduction-relation*
-      -->Λ
-      (load-Λ (term (add! true true)))))))
+ (eval-Λ (term (add! true true)))
  (term (err runtime REPL)))
 
 ;; primitive operation errors
 (test-equal
- (term
-  (unload-Λ
-   ,(first
-     (apply-reduction-relation*
-      -->Λ
-      (load-Λ (term (null? true)))))))
+ (eval-Λ (term (null? true)))
  (term (err runtime REPL)))
 
 (test-equal
- (term
-  (unload-Λ
-   ,(first
-     (apply-reduction-relation*
-      -->Λ
-      (load-Λ (term (head false)))))))
+ (eval-Λ (term (head false)))
  (term (err runtime REPL)))
 
 (test-equal
- (term
-  (unload-Λ
-   ,(first
-     (apply-reduction-relation*
-      -->Λ
-      (load-Λ (term (tail (λ (x) x))))))))
+ (eval-Λ (term (tail (λ (x) x))))
  (term (err runtime REPL)))
 
 
@@ -448,7 +395,13 @@
   [(unload-ΛC (v σ)) v]
   [(unload-ΛC ((err j k) σ)) (err j k)])
 
-
+(define (eval-ΛC t)
+  (term
+   (unload-Λ
+    ,(first
+      (apply-reduction-relation*
+       -->Λ
+       (load-Λ t))))))
 ;
 ;
 ;     ;;     ;;;           ;                    ;
@@ -467,138 +420,73 @@
 
 ;; Λ tests using -->ΛC to make sure that ΛC correctly extends Λ
 (test-equal
- (term
-  (unload-ΛC
-   ,(first
-     (apply-reduction-relation*
-      -->ΛC
-      (load-ΛC (term ((λ (x) true) false)))))))
+ (eval-ΛC (term ((λ (x) true) false)))
  (term true))
 
 (test-equal
- (term
-  (unload-ΛC
-   ,(first
-     (apply-reduction-relation*
-      -->ΛC
-      (load-ΛC (term (queue)))))))
+ (eval-ΛC (term (queue)))
  (term 0))
 
 (test-equal
- (term
-  (unload-ΛC
-   ,(first
-     (apply-reduction-relation*
-      -->ΛC
-      (load-ΛC (term (null? (queue))))))))
+ (eval-ΛC (term (null? (queue))))
  (term true))
 
 (test-equal
- (term
-  (unload-ΛC
-   ,(first
-     (apply-reduction-relation*
-      -->ΛC
-      (load-ΛC (term (head (add! (queue) false))))))))
+ (eval-ΛC (term (head (add! (queue) false))))
  (term false))
 
 (test-equal
- (term
-  (unload-ΛC
-   ,(first
-     (apply-reduction-relation*
-      -->ΛC
-      (load-ΛC (term (tail (add! (queue) false))))))))
+ (eval-ΛC (term (tail (add! (queue) false))))
  (term 1))
 
 (test-equal
- (term
-  (unload-ΛC
-   ,(first
-     (apply-reduction-relation*
-      -->ΛC
-      (load-ΛC (term (head (add! (add! (queue) false) true))))))))
+ (eval-ΛC (term (head (add! (add! (queue) false) true))))
  (term false))
 
 (test-equal
- (term
-  (unload-ΛC
-   ,(first
-     (apply-reduction-relation*
-      -->ΛC
-      (load-ΛC (term (if (head (add! (add! (queue) false) true))
-                        true
-                        (head (add! (add! (add! (queue) (λ (x) x)) (λ (x) false)) false)))))))))
+ (eval-ΛC (term (if (head (add! (add! (queue) false) true))
+                    true
+                    (head (add! (add! (add! (queue) (λ (x) x)) (λ (x) false)) false)))))
  (term (λ (x) x)))
 
 ;; TODO: write tests that actually use contracts
 
 ;; Booleans as contracts (p. 15) ===============================================
 (test-equal
- (term
-  (unload-ΛC
-   ,(first
-     (apply-reduction-relation*
-      -->ΛC
-      (load-ΛC (term (mon j k l
-                          true
-                          false)))))))
+ (eval-ΛC (term (mon j k l
+                     true
+                     false)))
  (term false))
 
 (test-equal
- (term
-  (unload-ΛC
-   ,(first
-     (apply-reduction-relation*
-      -->ΛC
-      (load-ΛC (term (mon ctc lib main
-                          true
-                          false)))))))
+ (eval-ΛC (term (mon ctc lib main
+                     true
+                     false)))
  (term false))
 
 (test-equal
- (term
-  (unload-ΛC
-   ,(first
-     (apply-reduction-relation*
-      -->ΛC
-      (load-ΛC (term ((mon ctc lib main
-                           true
-                           (λ (x) x))
-                      true)))))))
+ (eval-ΛC (term ((mon ctc lib main
+                      true
+                      (λ (x) x))
+                 true)))
  (term true))
 
 (test-equal
- (term
-  (unload-ΛC
-   ,(first
-     (apply-reduction-relation*
-      -->ΛC
-      (load-ΛC (term (mon j k l
-                          (if true true (queue))
-                          (λ (x) x))))))))
+ (eval-ΛC (term (mon j k l
+                     (if true true (queue))
+                     (λ (x) x))))
  (term (λ (x) x)))
 
 (test-equal
- (term
-  (unload-ΛC
-   ,(first
-     (apply-reduction-relation*
-      -->ΛC
-      (load-ΛC (term (mon j k l
-                          false
-                          true)))))))
+ (eval-ΛC (term (mon j k l
+                     false
+                     true)))
  (term (err j k)))
 
 (test-equal
- (term
-  (unload-ΛC
-   ,(first
-     (apply-reduction-relation*
-      -->ΛC
-      (load-ΛC (term (mon ctc lib main
-                          false
-                          (λ (x) x))))))))
+ (eval-ΛC (term (mon ctc lib main
+                     false
+                     (λ (x) x))))
  (term (err ctc lib)))
 
 ;; Functions as contracts ======================================================
@@ -611,47 +499,27 @@
 ;; Flat contracts
 ;; i.e. the function used as the contract is a predicate (returns a boolean)
 (test-equal
- (term
-  (unload-ΛC
-   ,(first
-     (apply-reduction-relation*
-      -->ΛC
-      (load-ΛC (term (mon j k l
-                          (λ (x) true)
-                          false)))))))
+ (eval-ΛC (term (mon j k l
+                     (λ (x) true)
+                     false)))
  (term false))
 
 (test-equal
- (term
-  (unload-ΛC
-   ,(first
-     (apply-reduction-relation*
-      -->ΛC
-      (load-ΛC (term (mon j k l
-                          (λ (x) false)
-                          false)))))))
+ (eval-ΛC (term (mon j k l
+                     (λ (x) false)
+                     false)))
  (term (err j k)))
 
 (test-equal
- (term
-  (unload-ΛC
-   ,(first
-     (apply-reduction-relation*
-      -->ΛC
-      (load-ΛC (term (mon j k l
-                          (bool=? true)
-                          false)))))))
+ (eval-ΛC (term (mon j k l
+                     (bool=? true)
+                     false)))
  (term (err j k)))
 
 (test-equal
- (term
-  (unload-ΛC
-   ,(first
-     (apply-reduction-relation*
-      -->ΛC
-      (load-ΛC (term (mon j k l
-                          (bool=? false)
-                          false)))))))
+ (eval-ΛC (term (mon j k l
+                     (bool=? false)
+                     false)))
  (term false))
 
 
@@ -680,39 +548,19 @@
 
 ;; attempting to attach an address (rather than a contract) to an expression
 (test-equal
- (term
-  (unload-ΛC
-   ,(first
-     (apply-reduction-relation*
-      -->ΛC
-      (load-ΛC (term (mon j k l (queue) true)))))))
+ (eval-ΛC (term (mon j k l (queue) true)))
  (term (err runtime REPL)))
 
 (test-equal
- (term
-  (unload-ΛC
-   ,(first
-     (apply-reduction-relation*
-      -->ΛC
-      (load-ΛC (term (mon j k l (add! (queue) false) true)))))))
+ (eval-ΛC (term (mon j k l (add! (queue) false) true)))
  (term (err runtime REPL)))
 
 (test-equal
- (term
-  (unload-ΛC
-   ,(first
-     (apply-reduction-relation*
-      -->ΛC
-      (load-ΛC (term (mon j k l (if true (queue) true) (λ (x) x))))))))
+ (eval-ΛC (term (mon j k l (if true (queue) true) (λ (x) x))))
  (term (err runtime REPL)))
 
 (test-equal
- (term
-  (unload-ΛC
-   ,(first
-     (apply-reduction-relation*
-      -->ΛC
-      (load-ΛC (term (mon j k l (if false true (queue)) (λ (x) x))))))))
+ (eval-ΛC (term (mon j k l (if false true (queue)) (λ (x) x))))
  (term (err runtime REPL)))
 
 
@@ -790,6 +638,13 @@
   [(unload-ΛT (v σ)) v]
   [(unload-ΛT ((err j k) σ)) (err j k)])
 
+(define (eval-ΛT t)
+  (term
+   (unload-Λ
+    ,(first
+      (apply-reduction-relation*
+       -->Λ
+       (load-Λ t))))))
 ;
 ;
 ;     ;;   ;;;;;;;         ;                    ;
@@ -815,8 +670,6 @@
       (load-ΛT (term (tr (λ (coll) (coll ->i true)) true)))))))
  (term (tr true true)))
 
-;; TODO example of ctc being blamed
-
 ;; Body contract tests =========================================================
 
 ;; Note the modules in effect:
@@ -830,58 +683,38 @@
 
 ;; Trace contract that collects function results, accepts all traces
 (test-equal
- (term
-  (unload-ΛT
-   ,(first
-     (apply-reduction-relation*
-      -->ΛT
-      (load-ΛT (term ((λ (f) (f false))
-                      ((mon ctc lib main
-                            (tr (λ (coll) ((Λ-bool=? false) ->i coll))
-                                (λ (trace) true)))
-                       (λ (x) false)))))))))
+ (eval-ΛT (term ((λ (f) (f false))
+                 ((mon ctc lib main
+                       (tr (λ (coll) ((Λ-bool=? false) ->i coll))
+                           (λ (trace) true)))
+                  (λ (x) false)))))
  (term false))
 
 ;; ... Above, but the argument is incorrect
 (test-equal
- (term
-  (unload-ΛT
-   ,(first
-     (apply-reduction-relation*
-      -->ΛT
-      (load-ΛT (term ((λ (f) (f true))
-                      ((mon ctc lib main
-                            (tr (λ (coll) (Λ-bool=? false))
-                                (λ (trace) true)))
-                       (λ (x) false)))))))))
+ (eval-ΛT (term ((λ (f) (f true))
+                 ((mon ctc lib main
+                       (tr (λ (coll) (Λ-bool=? false))
+                           (λ (trace) true)))
+                  (λ (x) false)))))
  (term (err ctc main))) ;; main gets blamed
 
 ;; Trace contract that collects function arguments, accepts all traces
 (test-equal
- (term
-  (unload-ΛT
-   ,(first
-     (apply-reduction-relation*
-      -->ΛT
-      (load-ΛT (term ((λ (f) (f false))
-                      ((mon ctc lib main
-                            (tr (λ (coll) (coll ->i (Λ-bool=? false)))
-                                (λ (trace) true)))
-                       (λ (x) false)))))))))
+ (eval-ΛT (term ((λ (f) (f false))
+                 ((mon ctc lib main
+                       (tr (λ (coll) (coll ->i (Λ-bool=? false)))
+                           (λ (trace) true)))
+                  (λ (x) false)))))
  (term false))
 
 ;; ... Above, but function is incorrect
 (test-equal
- (term
-  (unload-ΛT
-   ,(first
-     (apply-reduction-relation*
-      -->ΛT
-      (load-ΛT (term ((λ (f) (f false))
-                      ((mon ctc lib main
-                            (tr (λ (coll) (coll ->i (Λ-bool=? false)))
-                                (λ (trace) true)))
-                       (λ (x) true)))))))))
+ (eval-ΛT (term ((λ (f) (f false))
+                 ((mon ctc lib main
+                       (tr (λ (coll) (coll ->i (Λ-bool=? false)))
+                           (λ (trace) true)))
+                  (λ (x) true)))))
  ;; lib gets blamed
  (term (err ctc lib)))
 
@@ -893,149 +726,114 @@
 (define-term Λ-Y (λ (f) (λ (x) (f (x x))) (λ (x) (f (x x)))))
 (define-term Λ-alternating?
   (Λ-Y (λ (self)
-       (λ (q)
-         (if ((Λ-or (null? q)) (null? (tail q)))
-             true
-             ((Λ-and (Λ-not ((Λ-bool=? (head q)) (head (tail q)))))
-              (self (tail q))))))))
+         (λ (q)
+           (if ((Λ-or (null? q)) (null? (tail q)))
+               true
+               ((Λ-and (Λ-not ((Λ-bool=? (head q)) (head (tail q)))))
+                (self (tail q))))))))
 (define-term Λ-same?
   (Λ-Y (λ (self)
-       (λ (q)
-         (if ((Λ-or (null? q)) (null? (tail q)))
-             true
-             ((Λ-and ((Λ-bool=? (head q)) (head (tail q))))
-              (self (tail q))))))))
+         (λ (q)
+           (if ((Λ-or (null? q)) (null? (tail q)))
+               true
+               ((Λ-and ((Λ-bool=? (head q)) (head (tail q))))
+                (self (tail q))))))))
 
 ;; Trace contract that rejects all traces, blaming main
 (test-equal
- (term
-  (unload-ΛT
-   ,(first
-     (apply-reduction-relation*
-      -->ΛT
-      (load-ΛT (term ((λ (f) (f false))
-                      ((mon ctc lib main
-                            (tr (λ (coll) (coll ->i true))
-                                (λ (trace) false))) ;; pred returns false
-                       (λ (x) true)))))))))
+ (eval-ΛT (term ((λ (f) (f false))
+                 ((mon ctc lib main
+                       (tr (λ (coll) (coll ->i true))
+                           (λ (trace) false))) ;; pred returns false
+                  (λ (x) true)))))
  ;; main gets blamed, since it produced the collected value
  (term (err ctc main)))
 
 ;; Trace contract that rejects all traces, blaming lib
 (test-equal
- (term
-  (unload-ΛT
-   ,(first
-     (apply-reduction-relation*
-      -->ΛT
-      (load-ΛT (term ((λ (f) (f false))
-                      ((mon ctc lib main
-                            (tr (λ (coll) (true ->i coll))
-                                (λ (trace) false))) ;; pred returns false
-                       (λ (x) true)))))))))
+ (eval-ΛT (term ((λ (f) (f false))
+                 ((mon ctc lib main
+                       (tr (λ (coll) (true ->i coll))
+                           (λ (trace) false))) ;; pred returns false
+                  (λ (x) true)))))
 
  ;; lib gets blamed, since it produced the collected value
  (term (err ctc lib)))
 
 ;; Function that produces the same value every time (server blame ex.)
 (test-equal
- (term
-  (unload-ΛT
-   ,(first
-     (apply-reduction-relation*
-      -->ΛT
-      (load-ΛT (term ((λ (f) ((λ (_)
-                                ((λ (_)
-                                   ((λ (_)
-                                      (f true)) ;; fourth
-                                    (f true)))  ;; third
-                                 (f true)))     ;; second
-                              (f true)))        ;; first
-                      ((mon ctc lib main
-                            (tr (λ (coll) (true ->i coll))
-                                Λ-same?)))
-                      (λ (x) x))))))))
+ (eval-ΛT (term ((λ (f) ((λ (_)
+                           ((λ (_)
+                              ((λ (_)
+                                 (f true)) ;; fourth
+                               (f true)))  ;; third
+                            (f true)))     ;; second
+                         (f true)))        ;; first
+                 ((mon ctc lib main
+                       (tr (λ (coll) (true ->i coll))
+                           Λ-same?)))
+                 (λ (x) x))))
  true)
 
 ;; ... Above, trying all false return values
 (test-equal
- (term
-  (unload-ΛT
-   ,(first
-     (apply-reduction-relation*
-      -->ΛT
-      (load-ΛT (term ((λ (f) ((λ (_)
-                                ((λ (_)
-                                   ((λ (_)
-                                      (f false)) ;; fourth
-                                    (f false)))  ;; third
-                                 (f false)))     ;; second
-                              (f false)))        ;; first
-                      ((mon ctc lib main
-                            (tr (λ (coll) (true ->i coll))
-                                Λ-same?)))
-                      (λ (x) x))))))))
+ (eval-ΛT (term ((λ (f) ((λ (_)
+                           ((λ (_)
+                              ((λ (_)
+                                 (f false)) ;; fourth
+                               (f false)))  ;; third
+                            (f false)))     ;; second
+                         (f false)))        ;; first
+                 ((mon ctc lib main
+                       (tr (λ (coll) (true ->i coll))
+                           Λ-same?)))
+                 (λ (x) x))))
  true)
 
 ;; ... Above, but trace violates predicate
 (test-equal
- (term
-  (unload-ΛT
-   ,(first
-     (apply-reduction-relation*
-      -->ΛT
-      (load-ΛT (term ((λ (f) ((λ (_)
-                                ((λ (_)
-                                   ((λ (_)
-                                      (f false)) ;; fourth
-                                    (f true)))  ;; third
-                                 (f false)))     ;; second
-                              (f false)))        ;; first
-                      ((mon ctc lib main
-                            (tr (λ (coll) (true ->i coll))
-                                Λ-same?)))
-                      (λ (x) x))))))))
+ (eval-ΛT (term ((λ (f) ((λ (_)
+                           ((λ (_)
+                              ((λ (_)
+                                 (f false)) ;; fourth
+                               (f true)))  ;; third
+                            (f false)))     ;; second
+                         (f false)))        ;; first
+                 ((mon ctc lib main
+                       (tr (λ (coll) (true ->i coll))
+                           Λ-same?)))
+                 (λ (x) x))))
  ;; lib gets blamed, since it promised identical return values
  (term (err ctc lib)))
 
 ;; Function that accepts an alternating stream (client blame ex.)
 (test-equal
- (term
-  (unload-ΛT
-   ,(first
-     (apply-reduction-relation*
-      -->ΛT
-      (load-ΛT (term ((λ (f) ((λ (_)
-                                ((λ (_)
-                                   ((λ (_)
-                                      (f true)) ;; fourth
-                                    (f false))) ;; third
-                                 (f true)))     ;; second
-                              (f false)))       ;; first
-                      ((mon ctc lib main
-                            (tr (λ (coll) (coll ->i true))
-                                Λ-alternating?))
-                       (λ (x) true)))))))))
+ (eval-ΛT (term ((λ (f) ((λ (_)
+                           ((λ (_)
+                              ((λ (_)
+                                 (f true)) ;; fourth
+                               (f false))) ;; third
+                            (f true)))     ;; second
+                         (f false)))       ;; first
+                 ((mon ctc lib main
+                       (tr (λ (coll) (coll ->i true))
+                           Λ-alternating?))
+                  (λ (x) true)))))
  true)
 
 ;; ... Above, but trace violates predicate
 (test-equal
- (term
-  (unload-ΛT
-   ,(first
-     (apply-reduction-relation*
-      -->ΛT
-      (load-ΛT (term ((λ (f) ((λ (_)
-                                ((λ (_)
-                                   ((λ (_)
-                                      (f true)) ;; fourth
-                                    (f false))) ;; third
-                                 (f true)))     ;; second
-                              (f false)))       ;; first
-                      ((mon ctc lib main
-                            (tr (λ (coll) (coll ->i true))
-                                Λ-alternating?))
-                       (λ (x) true)))))))))
+ (eval-ΛT (term ((λ (f) ((λ (_)
+                           ((λ (_)
+                              ((λ (_)
+                                 (f true)) ;; fourth
+                               (f false))) ;; third
+                            (f true)))     ;; second
+                         (f false)))       ;; first
+                 ((mon ctc lib main
+                       (tr (λ (coll) (coll ->i true))
+                           Λ-alternating?))
+                  (λ (x) true)))))
  ;; main gets blamed, since it produced the collected value
  (term (err ctc main)))
 
