@@ -752,8 +752,8 @@
 ;; - client module   :: main
 
 ;; Helper terms
-(define-term not (λ (x) (if x false true)))
-(define-term bool=? (λ (x) (λ (y) (if x y (not y)))))
+(define-term Λ-not (λ (x) (if x false true)))
+(define-term Λ-bool=? (λ (x) (λ (y) (if x y (Λ-not y)))))
 
 ;; Trace contract that collects function results, accepts all traces
 (test-equal
@@ -764,7 +764,7 @@
       -->ΛT
       (load-ΛT (term ((λ (f) (f false))
                       ((mon ctc lib main
-                            (tr (λ (coll) ((bool=? false) ->i coll))
+                            (tr (λ (coll) ((Λ-bool=? false) ->i coll))
                                 (λ (trace) true)))
                        (λ (x) false)))))))))
  (term false))
@@ -778,7 +778,7 @@
       -->ΛT
       (load-ΛT (term ((λ (f) (f true))
                       ((mon ctc lib main
-                            (tr (λ (coll) (bool=? false))
+                            (tr (λ (coll) (Λ-bool=? false))
                                 (λ (trace) true)))
                        (λ (x) false)))))))))
  (term (err ctc main))) ;; main gets blamed
@@ -792,7 +792,7 @@
       -->ΛT
       (load-ΛT (term ((λ (f) (f false))
                       ((mon ctc lib main
-                            (tr (λ (coll) (coll ->i (bool=? false)))
+                            (tr (λ (coll) (coll ->i (Λ-bool=? false)))
                                 (λ (trace) true)))
                        (λ (x) false)))))))))
  (term false))
@@ -806,13 +806,32 @@
       -->ΛT
       (load-ΛT (term ((λ (f) (f false))
                       ((mon ctc lib main
-                            (tr (λ (coll) (coll ->i (bool=? false)))
+                            (tr (λ (coll) (coll ->i (Λ-bool=? false)))
                                 (λ (trace) true)))
                        (λ (x) true)))))))))
  ;; lib gets blamed
  (term (err ctc lib)))
 
 ;; Trace predicate tests =======================================================
+
+;; More helper terms
+(define-term Λ-and (λ (a) (λ (b) (if a b false))))
+(define-term Λ-or (λ (a) (λ (b) (if a true b))))
+(define-term Λ-Y (λ (f) (λ (x) (f (x x))) (λ (x) (f (x x)))))
+(define-term Λ-alternating?
+  (Λ-Y (λ (self)
+       (λ (q)
+         (if ((Λ-or (null? q)) (null? (tail q)))
+             true
+             ((Λ-and (Λ-not ((Λ-bool=? (head q)) (head (tail q)))))
+              (self (tail q))))))))
+(define-term Λ-same?
+  (Λ-Y (λ (self)
+       (λ (q)
+         (if ((Λ-or (null? q)) (null? (tail q)))
+             true
+             ((Λ-and ((Λ-bool=? (head q)) (head (tail q))))
+              (self (tail q))))))))
 
 ;; Trace contract that rejects all traces, blaming main
 (test-equal
@@ -845,23 +864,107 @@
  ;; lib gets blamed, since it produced the collected value
  (term (err ctc lib)))
 
-;; Function that accepts an alternating stream
+;; Function that produces the same value every time (server blame ex.)
 (test-equal
  (term
   (unload-ΛT
    ,(first
      (apply-reduction-relation*
       -->ΛT
-      (load-ΛT (term ((λ (f) (f (f (f (f true)))))
+      (load-ΛT (term ((λ (f) ((λ (_)
+                                ((λ (_)
+                                   ((λ (_)
+                                      (f true)) ;; fourth
+                                    (f true)))  ;; third
+                                 (f true)))     ;; second
+                              (f true)))        ;; first
                       ((mon ctc lib main
-                            (tr (λ (coll) (coll ->i true))
-                                (λ (trace) (not (bool=?)))))
-                       (λ (x) true)))))))))
- ;; lib gets blamed, since it produced the collected value
+                            (tr (λ (coll) (true ->i coll))
+                                Λ-same?)))
+                      (λ (x) x))))))))
+ true)
+
+;; ... Above, trying all false return values
+(test-equal
+ (term
+  (unload-ΛT
+   ,(first
+     (apply-reduction-relation*
+      -->ΛT
+      (load-ΛT (term ((λ (f) ((λ (_)
+                                ((λ (_)
+                                   ((λ (_)
+                                      (f false)) ;; fourth
+                                    (f false)))  ;; third
+                                 (f false)))     ;; second
+                              (f false)))        ;; first
+                      ((mon ctc lib main
+                            (tr (λ (coll) (true ->i coll))
+                                Λ-same?)))
+                      (λ (x) x))))))))
+ true)
+
+;; ... Above, but trace violates predicate
+(test-equal
+ (term
+  (unload-ΛT
+   ,(first
+     (apply-reduction-relation*
+      -->ΛT
+      (load-ΛT (term ((λ (f) ((λ (_)
+                                ((λ (_)
+                                   ((λ (_)
+                                      (f false)) ;; fourth
+                                    (f true)))  ;; third
+                                 (f false)))     ;; second
+                              (f false)))        ;; first
+                      ((mon ctc lib main
+                            (tr (λ (coll) (true ->i coll))
+                                Λ-same?)))
+                      (λ (x) x))))))))
+ ;; lib gets blamed, since it promised identical return values
  (term (err ctc lib)))
 
-;; TODO Function that produces an alternating stream
+;; Function that accepts an alternating stream (client blame ex.)
+(test-equal
+ (term
+  (unload-ΛT
+   ,(first
+     (apply-reduction-relation*
+      -->ΛT
+      (load-ΛT (term ((λ (f) ((λ (_)
+                                ((λ (_)
+                                   ((λ (_)
+                                      (f true)) ;; fourth
+                                    (f false))) ;; third
+                                 (f true)))     ;; second
+                              (f false)))       ;; first
+                      ((mon ctc lib main
+                            (tr (λ (coll) (coll ->i true))
+                                Λ-alternating?))
+                       (λ (x) true)))))))))
+ true)
 
+;; ... Above, but trace violates predicate
+(test-equal
+ (term
+  (unload-ΛT
+   ,(first
+     (apply-reduction-relation*
+      -->ΛT
+      (load-ΛT (term ((λ (f) ((λ (_)
+                                ((λ (_)
+                                   ((λ (_)
+                                      (f true)) ;; fourth
+                                    (f false))) ;; third
+                                 (f true)))     ;; second
+                              (f false)))       ;; first
+                      ((mon ctc lib main
+                            (tr (λ (coll) (coll ->i true))
+                                Λ-alternating?))
+                       (λ (x) true)))))))))
+ ;; main gets blamed, since it produced the collected value
+ (term (err ctc main)))
 
 ;
 ;
