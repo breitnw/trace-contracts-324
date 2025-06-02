@@ -977,12 +977,12 @@
         mon-trace]
    
    [--> ((in-hole E (mon j k (co v_κ α v_p) v)) σ)
-        ((in-hole E (seqn (add! α x_j)
+        ((in-hole E (seqn (add! α e_j)
                           (mon j k (v_p α) v)
-                          x_v))
+                          e_v))
          σ)
-        (where x_v (mon j k v_κ v))
-        (where x_j (x_v · j))
+        (where e_v (mon j k v_κ v))
+        (where e_j (e_v · j))
         mon-col]))
 
 
