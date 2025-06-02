@@ -3,6 +3,7 @@
 (require redex)
 (require rackunit)
 
+
 ;; =============================================================================
 ;;                                SECTION 1 : Λ
 ;; =============================================================================
@@ -409,6 +410,8 @@
       (apply-reduction-relation*
        -->ΛC
        (load-ΛC t))))))
+
+
 ;
 ;
 ;     ;;     ;;;           ;                    ;
@@ -425,7 +428,7 @@
 ;
 
 
-;; Λ tests using -->ΛC to make sure that ΛC correctly extends Λ
+;; Λ tests using -->ΛC to make sure that ΛC correctly extends Λ ================
 (test-equal
  (eval-ΛC (term ((λ (x) true) false)))
  (term true))
@@ -529,31 +532,37 @@
                      false)))
  (term false))
 
-
-
 ;; Cascading contracts
 ;; i.e. the function used as the contract returns a function contract
 
-
+;; TODO
 
 
 ;; Arrow contracts =============================================================
+;; E.g. program 4.1 from paper (p. 15)
+;; TODO: need to add concept of equality to our language to make this work
+;(mon ctc lib main (true ->i (λ (x) (λ (y) x == y))) (λ (z) z))
+
+;; TODO
 
 
 ;; example that shows that effects aren't duplicated
 ;;   (maybe we just state that this is true; otherwise, we have to add effects to our language)
 ;;   could we use `add!` as our effect? idk how to check that `add!` is only called once though
 
+;; TODO
+
 
 ;; example where contract itself is inconsistent, e.g.
 ;;   `(bool? -> bool?) ->i (λ (f) (f 42))` from paper, p. 16
+
+;; TODO
 
 
 ;; `(mon j k v_κ v)` where v_κ is not a contract (should error)
 ;; i.e. attempting to attach something that's not a contract to an expression
 
-
-;; attempting to attach an address (rather than a contract) to an expression
+;; Attempting to attach an address (rather than a contract) to an expression ===
 (test-equal
  (eval-ΛC (term (mon j k l (queue) true)))
  (term (err runtime REPL)))
@@ -570,10 +579,7 @@
  (eval-ΛC (term (mon j k l (if false true (queue)) (λ (x) x))))
  (term (err runtime REPL)))
 
-
-;; Program 4.1 from paper (p. 15)
-;; TODO: need to add concept of equality to our language to make this work
-;(mon ctc lib main (true ->i (λ (x) (λ (y) x == y))) (λ (z) z))
+;; TODO: attempting to attach other things that aren't addresses or contracts?
 
 
 ;; =============================================================================
@@ -642,7 +648,7 @@
 (define (load-ΛT p)
   (cond
     [(redex-match? ΛT e p) (term (,p ()))]
-    [else (raise "load: expected a valid program")]))
+    [else (raise (string-append "load: expected a valid program, received: " (~a p)))]))
 
 (define-metafunction ΛT-eval
   unload-ΛT : ζ -> e
@@ -902,7 +908,7 @@
 (define (load-ΛU p)
   (cond
     [(redex-match? ΛU e p) (term (,p ()))]
-    [else (raise "load: expected a valid program")]))
+    [else (raise (string-append "load: expected a valid program, received: " (~a p)))]))
 
 (define-metafunction ΛT-eval
   unload-ΛU : ζ -> e
