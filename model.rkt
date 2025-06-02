@@ -937,16 +937,18 @@
 
 (define -->ΛU
   (extend-reduction-relation
-   -->Λ  ;; TODO: this should be -->ΛC, not -->Λ
+   -->ΛC  ;; TODO: this should be -->ΛC, not -->Λ
    ΛU-eval
 
    ;; TODO: all the `mon`s should be j k, not k j
-   [--> ((in-hole E (mon k j (tr v_κ v_b v_p))) σ)
+   [--> ((in-hole E (mon j k (tr v_κ v_b v_p) v)) σ)
         ;; TODO: missing the second value in the monitor. The line should instead be
-        ;; `(mon j k (tr v_κ v_b v_p) v)`
+        ;; `(mon j k (tr v_κ v_b v_p) v)` DONE////
         
-        ((in-hole E (mon k j v_b (co v_κ α v_p) v)) (in-hole E (next σ))(extend σ))
-        ;; TODO: the `v_b (co v_κ α v_p)` should be in parentheses
+        ((in-hole E (mon j k (v_b (co v_κ α v_p) v))) σ_2)
+        (where α (next σ))
+        (where σ_2 (extend σ))
+        ;; TODO: the `v_b (co v_κ α v_p)` should be in parentheses 
         ;; TODO: α is undefined when used in the first `in-hole`
         ;; TODO: the second `in-hole` shouldn't be an `in-hole`; it should be a store
         mon-trace]
@@ -966,7 +968,7 @@
     [(redex-match? ΛU e p) (term (,p ()))]
     [else (raise (string-append "load-ΛU: expected a valid program, received: " (~a p)))]))
 
-(define-metafunction ΛT-eval  ;; TODO: this should be ΛU-eval, not ΛT-eval
+(define-metafunction ΛU-eval  ;; TODO: this should be ΛU-eval, not ΛT-eval
   unload-ΛU : ζ -> e
   [(unload-ΛU (v σ)) v]
   [(unload-ΛU ((err j k) σ)) (err j k)])
