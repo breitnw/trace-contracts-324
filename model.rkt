@@ -39,12 +39,8 @@
   (ζ ::= (e σ))
   (e ::= .... α (err j k))
   (v ::= b f α)
-<<<<<<< HEAD
-  (E ::= hole (o E) (if E e e) (E e) (v E) (add! E e) (add! v E) (seqn v ... E e ...))
-=======
   (non-fun ::= b α)  ;; not in paper; added to simplify err-app case
-  (E ::= hole (o E) (if E e e) (E e) (v E) (add! E e) (add! v E))
->>>>>>> c6eeaafe96233d91a66faf8bad040ca214f59132
+  (E ::= hole (o E) (if E e e) (E e) (v E) (add! E e) (add! v E) (seqn v ... E e ...))
   (u ::= null (cons v α))  ;; store values
   (σ ::= ((α u) ...))  ;; store
   (α ::= natural)
