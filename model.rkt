@@ -297,15 +297,17 @@
 ;                               ;;
 
 
-; `(e_d ->i e_c)` is a dependent function contract.
-; The codomain contract, e_c, can depend on the argument to the protected function.
+;; `(e_d ->i e_c)` is a dependent function contract.
+;; The codomain contract, e_c, can depend on the argument to the protected function.
 
-; `(mon j k l e_κ e_c)` is a monitor that attaches contract e_κ to e_c.
-; The value of e_c is dubbed the "carrier" of the contract.
-; j, k, and l are labels that name the parties that agreed to the contract:
-; j is the contract-defining module,
-; k is the server module, and
-; l is the client module.
+;; `(mon j k l e_κ e_c)` is a monitor that attaches contract e_κ to e_c.
+;; The value of e_c is dubbed the "carrier" of the contract.
+;; j, k, and l are labels that name the parties that agreed to the contract:
+;; j is the contract-defining module,
+;; k is the server module, and
+;; l is the client module.
+
+;; KEY IDEA: monitors are what Kaylie and Joanna called "obligations"
 
 (define-extended-language ΛC
   Λ
@@ -459,6 +461,12 @@
                     (head (add! (add! (add! (queue) (λ (x) x)) (λ (x) false)) false)))))
  (term (λ (x) x)))
 
+;; ===================
+
+;; TODO: Something that's a value in ΛC but not in Λ
+;(term (grd j k true false)
+
+
 ;; TODO: write tests that actually use contracts
 
 ;; Booleans as contracts (p. 15) ===============================================
@@ -543,7 +551,91 @@
 ;; TODO: need to add concept of equality to our language to make this work
 ;(mon ctc lib main (true ->i (λ (x) (λ (y) x == y))) (λ (z) z))
 
-;; TODO
+;; Contract on the identity function
+;; This contract is not as expressive as it could be since we don't have many
+;; primitive operations at our disposal.
+
+;; This doesn't reduce to a value b/c x is not a value
+#;
+(traces -->ΛC (load-ΛC (term (mon j k l
+                                  true
+                                  x))))
+
+;; Identity function not applied to anything
+;; TODO: I think what this currently evaluates to is actually correct,
+;; since it results in a function that isn't applied to anything, and
+;; our language isn't supposed to reduce inside a function expression
+#;
+(traces -->ΛC (load-ΛC (term (mon j k l
+                                  (true ->i (λ (x) (λ (y) ((Λ-bool=? x) y))))
+                                  (λ (z) z)))))
+#;
+(test-equal
+ (eval-ΛC (term (mon j k l
+                     (true ->i Λ-bool=?)
+                     (λ (z) z))))
+ (term (λ (z) z)))
+
+;; Identity function applied to something
+;; TODO: why does this have a point where two reduction rules fire at the same time?
+#;
+(traces -->ΛC (load-ΛC (term ((mon j k l
+                                   (true ->i Λ-bool=?)
+                                   (λ (z) z))
+                              false))))
+
+;; Answer: because if there is ever a pattern that looks like
+;; `((λ (x) e_C) v)`, where e_C is an expression in ΛC but is not an expression
+;; in Λ, then the expression will match the err-app case in the Λ reduction.
+
+;; This happens when we have (λ (x) (mon ...)) after the grd-fun reduction step.
+
+;; TODO: fix this. Is there a way to override an old reduction relation when
+;; using `extend-reduction-relation` or will we need to make a completely new
+;; reduction relation for each language and copy + paste all the old reductions?
+#;
+(redex-match ΛC-eval
+             ((in-hole E (v_f v)) σ)
+             (term
+              (((λ (x)
+                  (mon
+                   j
+                   k
+                   l
+                   ((λ (x) (λ (y) (if x y ((λ (x) (if x false true)) y))))
+                    ((mon j l true x) · j))
+                   ((λ (z) z) ((mon j l true x) · k))))
+                false)
+               ())))
+#;
+(redex-match Λ
+             f
+             (term
+              (λ (x)
+                (mon
+                 j
+                 k
+                 l
+                 ((λ (x) (λ (y) (if x y ((λ (x) (if x false true)) y)))) ((mon j l true x) · j))
+                 ((λ (z) z) ((mon j l true x) · k))))))
+
+
+(test-equal
+ (eval-ΛC (term ((mon j k l
+                      (true ->i Λ-bool=?)
+                      (λ (z) z))
+                 false)))
+ (term false))
+
+(test-equal
+ (eval-ΛC (term ((mon j k l
+                      (true ->i Λ-bool=?)
+                      (λ (z) z))
+                 true)))
+ (term true))
+
+
+;; TODO: more arrow contracts
 
 
 ;; example that shows that effects aren't duplicated
