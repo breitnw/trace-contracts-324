@@ -737,7 +737,7 @@
 ;                               ;;
 
 (define-extended-language ΛT
-  Λ  ;; TODO: should extend ΛC, not Λ
+  ΛC
   (e ::= .... (tr e_κ e_p))) ;; trace contract
 
 ;; trace contract parameters:
@@ -751,7 +751,7 @@
   ;; surface syntax from ΛT and evaluation syntax from ΛC-eval
   ΛT∪ΛC-eval
   (e ::= .... (co α v_p))
-  (κ ::= (tr v v) (co α v))  ;; TODO: add `....` to start
+  (κ ::= .... (tr v v) (co α v))
   (E ::= .... (tr E e) (tr v E)))
 
 ;; collector parameters:
@@ -785,10 +785,10 @@
     [(redex-match? ΛT e p) (term (,p ()))]
     [else (raise "load: expected a valid program")]))
 
-;; TODO: modify in same way other unloaders were modified
 (define-metafunction ΛT-eval
-  unload-ΛT : ζ -> v
-  [(unload-ΛT (v σ)) v])
+  unload-ΛT : ζ -> e
+  [(unload-ΛT (v σ)) v]
+  [(unload-ΛT ((err j k) σ)) (err j k)])
 
 ;
 ;
