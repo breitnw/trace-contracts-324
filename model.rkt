@@ -982,7 +982,7 @@
 
 (define -->ΛU
   (extend-reduction-relation
-   -->Λ  ;; TODO: this should be -->ΛC, not -->Λ
+   -->ΛC  ;; TODO: this should be -->ΛC, not -->Λ
    ΛU-eval
 
    ;; TODO: all the `mon`s should be j k, not k j
