@@ -862,7 +862,7 @@
 
 
 (define-extended-language ΛU
-  Λ  ;; TODO: should extend ΛC, not Λ
+  ΛC ;; TODO: should extend ΛC, not Λ
   (e ::= .... (tr e e e)))
 
 (define-union-language ΛU∪ΛC-eval ΛU ΛC-eval)
