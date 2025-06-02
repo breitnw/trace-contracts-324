@@ -188,7 +188,7 @@
 (define (load-Λ p)
   (cond
     [(redex-match? Λ e p) (term (,p ()))]
-    [else (raise (string-append "load: expected a valid program, received: " (~a p)))]))
+    [else (raise (string-append "load-Λ: expected a valid program, received: " (~a p)))]))
 
 (define-metafunction Λ-eval
   unload-Λ : ζ -> e
@@ -398,7 +398,7 @@
 (define (load-ΛC p)
   (cond
     [(redex-match? ΛC e p) (term (,p ()))]
-    [else (raise (string-append "load: expected a valid program, received: " (~a p)))]))
+    [else (raise (string-append "load-ΛC: expected a valid program, received: " (~a p)))]))
 
 (define-metafunction ΛC-eval
   unload-ΛC : ζ -> e
@@ -740,7 +740,7 @@
 (define (load-ΛT p)
   (cond
     [(redex-match? ΛT e p) (term (,p ()))]
-    [else (raise (string-append "load: expected a valid program, received: " (~a p)))]))
+    [else (raise (string-append "load-ΛT: expected a valid program, received: " (~a p)))]))
 
 (define-metafunction ΛT-eval
   unload-ΛT : ζ -> e
@@ -963,9 +963,7 @@
   ΛU∪ΛC-eval
   (e ::= .... (co v α v))
   (κ ::= .... (tr v v v) (co v α v))
-  (E ::= .... (tr E e e) (tr v E e) (tr v v E))
-
-  )
+  (E ::= .... (tr E e e) (tr v E e) (tr v v E)))
 
 ;
 ;                                          ;
@@ -984,25 +982,36 @@
 
 (define -->ΛU
   (extend-reduction-relation
-   -->Λ
+   -->Λ  ;; TODO: this should be -->ΛC, not -->Λ
    ΛU-eval
 
-   [-->((in-hole E (mon k j (tr v_κ v_b v_p))) σ)
-       ((in-hole E (mon k j v_b (co v_κ α v_p) v)) (in-hole E (next σ))(extend σ))
-       mon-trace]
+   ;; TODO: all the `mon`s should be j k, not k j
+   [--> ((in-hole E (mon k j (tr v_κ v_b v_p))) σ)
+        ;; TODO: missing the second value in the monitor. The line should instead be
+        ;; `(mon j k (tr v_κ v_b v_p) v)`
+        
+        ((in-hole E (mon k j v_b (co v_κ α v_p) v)) (in-hole E (next σ))(extend σ))
+        ;; TODO: the `v_b (co v_κ α v_p)` should be in parentheses
+        ;; TODO: α is undefined when used in the first `in-hole`
+        ;; TODO: the second `in-hole` shouldn't be an `in-hole`; it should be a store
+        mon-trace]
+   
    [--> ((in-hole E (mon k j (co v_κ α v_p) v)) σ)
         ((in-hole E (add! α x_j (mon k j v_p α) v x_v)) σ)
-        (where x_j (mon k j v_κ v))
+        ;; TODO: missing parenthesis before v_p
+        ;; TODO: these operations should be performed in sequence; that's not what's
+        ;; happening here
+        
+        (where x_j (mon k j v_κ v))  ;; TODO: this should be x_v, not x_j
         (where x_j (x_v · j))
-        mon-col]
-   ))
+        mon-col]))
 
 (define (load-ΛU p)
   (cond
     [(redex-match? ΛU e p) (term (,p ()))]
-    [else (raise (string-append "load: expected a valid program, received: " (~a p)))]))
+    [else (raise (string-append "load-ΛU: expected a valid program, received: " (~a p)))]))
 
-(define-metafunction ΛT-eval
+(define-metafunction ΛT-eval  ;; TODO: this should be ΛU-eval, not ΛT-eval
   unload-ΛU : ζ -> e
   [(unload-ΛU (v σ)) v]
   [(unload-ΛU ((err j k) σ)) (err j k)])
