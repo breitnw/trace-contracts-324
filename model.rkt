@@ -3,6 +3,9 @@
 (require redex)
 (require rackunit)
 
+;; =============================================================================
+;;                                SECTION 1 : Λ
+;; =============================================================================
 
 ;
 ;
@@ -273,6 +276,10 @@
  (term (err runtime REPL)))
 
 
+;; =============================================================================
+;;                                SECTION 2 : ΛC
+;; =============================================================================
+
 ;
 ;
 ;     ;;     ;;;                                ;
@@ -397,11 +404,11 @@
 
 (define (eval-ΛC t)
   (term
-   (unload-Λ
+   (unload-ΛC
     ,(first
       (apply-reduction-relation*
-       -->Λ
-       (load-Λ t))))))
+       -->ΛC
+       (load-ΛC t))))))
 ;
 ;
 ;     ;;     ;;;           ;                    ;
@@ -569,6 +576,10 @@
 ;(mon ctc lib main (true ->i (λ (x) (λ (y) x == y))) (λ (z) z))
 
 
+;; =============================================================================
+;;                                SECTION 3 : ΛT
+;; =============================================================================
+
 ;
 ;
 ;     ;;   ;;;;;;;                              ;
@@ -640,11 +651,11 @@
 
 (define (eval-ΛT t)
   (term
-   (unload-Λ
+   (unload-ΛT
     ,(first
       (apply-reduction-relation*
-       -->Λ
-       (load-Λ t))))))
+       -->ΛT
+       (load-ΛT t))))))
 ;
 ;
 ;     ;;   ;;;;;;;         ;                    ;
@@ -659,16 +670,6 @@
 ;
 ;
 ;
-
-;; Trace contract as a value
-(test-equal
- (term
-  (unload-ΛT
-   ,(first
-     (apply-reduction-relation*
-      -->ΛT
-      (load-ΛT (term (tr (λ (coll) (coll ->i true)) true)))))))
- (term (tr true true)))
 
 ;; Body contract tests =========================================================
 
@@ -833,6 +834,11 @@
  ;; main gets blamed, since it produced the collected value
  (term (err ctc main)))
 
+
+;; =============================================================================
+;;                                SECTION 4 : ΛU
+;; =============================================================================
+
 ;
 ;
 ;     ;;   ;    ;                               ;
@@ -878,7 +884,6 @@
 ;
 ;
 
-#;
 (define -->ΛU
   (extend-reduction-relation
    -->Λ
@@ -892,10 +897,25 @@
         (where x_j (mon k j v_κ v))
         (where x_j (x_v · j))
         mon-col]
+   ))
 
+(define (load-ΛU p)
+  (cond
+    [(redex-match? ΛU e p) (term (,p ()))]
+    [else (raise "load: expected a valid program")]))
 
-   )
-  )
+(define-metafunction ΛT-eval
+  unload-ΛU : ζ -> e
+  [(unload-ΛU (v σ)) v]
+  [(unload-ΛU ((err j k) σ)) (err j k)])
+
+(define (eval-ΛU t)
+  (term
+   (unload-ΛU
+    ,(first
+      (apply-reduction-relation*
+       -->ΛU
+       (load-ΛU t))))))
 
 ;
 ;
@@ -917,8 +937,16 @@
 ; TODO
 
 
+;; =============================================================================
+;;                              SECTION 5 : TRACES
+;; =============================================================================
+
+;; TODO write (commented-out) examples with traces for live demonstration
 
 
+;; =============================================================================
+;;                                APPENDIX: DELTA
+;; =============================================================================
 
 
 ;
@@ -935,6 +963,8 @@
 ;
 ;
 ;
+
+;; primitive operation's input is an address ===================================
 
 ;; =============
 ;; |  `null?`  |
