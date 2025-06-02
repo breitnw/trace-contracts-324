@@ -254,6 +254,8 @@
                    (head (add! (add! (add! (queue) (λ (x) x)) (λ (x) false)) false)))))
  (term (λ (x) x)))
 
+;; TODO: test `seqn`
+
 ;; Errors ======================================================================
 
 ;; err-app case
@@ -473,7 +475,6 @@
 ;(term (grd j k true false)
 
 
-;; TODO: write tests that actually use contracts
 
 ;; Booleans as contracts (p. 15) ===============================================
 (test-equal
@@ -546,6 +547,19 @@
                      false)))
  (term false))
 
+;; Contract that accepts only true values
+(test-equal
+ (eval-ΛC (term (mon j k l
+                     (λ (x) x)
+                     true)))
+ (term true))
+
+(test-equal
+ (eval-ΛC (term (mon j k l
+                     (λ (x) x)
+                     false)))
+ (term (err _ _)))
+
 ;; Cascading contracts
 ;; i.e. the function used as the contract returns a function contract
 
@@ -562,9 +576,12 @@
 ;; primitive operations at our disposal.
 
 ;; Identity function not applied to anything
-;; TODO: I think what this currently evaluates to is actually correct,
+
+;; I think what this currently evaluates to is actually correct,
 ;; since it results in a function that isn't applied to anything, and
 ;; our language isn't supposed to reduce inside a function expression
+
+;; TODO: Is this actually correct?
 #;
 (traces -->ΛC (load-ΛC (term (mon j k l
                                   (true ->i (λ (x) (λ (y) ((Λ-bool=? x) y))))
@@ -590,6 +607,21 @@
                       (λ (z) z))
                  true)))
  (term true))
+
+;; Incorrect identity function; contract raises an error
+(test-equal
+ (eval-ΛC (term ((mon j k l
+                      (true ->i Λ-bool=?)
+                      (λ (z) (Λ-not z)))
+                 true)))
+ (term (err _ _)))
+
+(test-equal
+ (eval-ΛC (term ((mon j k l
+                      (true ->i Λ-bool=?)
+                      (λ (z) (Λ-not z)))
+                 false)))
+ (term (err _ _)))
 
 
 ;; TODO: more arrow contracts
