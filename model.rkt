@@ -146,7 +146,7 @@
         Λδ]
 
    ;; sequenced operations
-   [--> ((in-hole E (v_1 ... v_2)) σ)
+   [--> ((in-hole E (seqn v_1 ... v_2)) σ)
         ((in-hole E v_2) σ)
         Λseqn]
 
@@ -223,7 +223,6 @@
 ;
 ;
 ;
-
 
 (test-equal
  (eval-Λ (term ((λ (x) true) false)))
@@ -938,7 +937,7 @@
         ((in-hole E (mon j k (v_b (co v_κ α v_p) v))) σ_2)
         (where α (next σ))
         (where σ_2 (extend σ))
-        ;; TODO: the `v_b (co v_κ α v_p)` should be in parentheses 
+        ;; TODO: the `v_b (co v_κ α v_p)` should be in parentheses
         ;; TODO: α is undefined when used in the first `in-hole`
         ;; TODO: the second `in-hole` shouldn't be an `in-hole`; it should be a store
         mon-trace]
