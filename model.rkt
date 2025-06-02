@@ -273,7 +273,7 @@
                         (head (add! (add! (add! (queue) (λ (x) x)) (λ (x) false)) false)))))))))
  (term (λ (x) x)))
 
-;; Errors
+;; Errors ======================================================================
 
 ;; err-app case
 ;; function application with a non-function
@@ -324,7 +324,6 @@
       -->Λ
       (load-Λ (term (tail (λ (x) x))))))))
  (term (err runtime REPL)))
-
 
 
 ;
@@ -466,7 +465,7 @@
 ;
 
 
-;; Λ tests using -->ΛC to make sure that ΛC correctly *extends* Λ
+;; Λ tests using -->ΛC to make sure that ΛC correctly extends Λ
 (test-equal
  (term
   (unload-ΛC
@@ -532,26 +531,18 @@
                         (head (add! (add! (add! (queue) (λ (x) x)) (λ (x) false)) false)))))))))
  (term (λ (x) x)))
 
-;; example from paper, section 4.3
-#;
-(test-equal
- (term
-  (unload-ΛC
-   ,(first
-     (apply-reduction-relation*
-      -->ΛC
-      (load-ΛC (term ?)))))))
-
 ;; TODO: write tests that actually use contracts
 
-;; true and false as contracts (p. 15)
+;; Booleans as contracts (p. 15) ===============================================
 (test-equal
  (term
   (unload-ΛC
    ,(first
      (apply-reduction-relation*
       -->ΛC
-      (load-ΛC (term (mon j k l true false)))))))
+      (load-ΛC (term (mon j k l
+                          true
+                          false)))))))
  (term false))
 
 (test-equal
@@ -560,7 +551,9 @@
    ,(first
      (apply-reduction-relation*
       -->ΛC
-      (load-ΛC (term (mon ctc lib main true false)))))))
+      (load-ΛC (term (mon ctc lib main
+                          true
+                          false)))))))
  (term false))
 
 (test-equal
@@ -569,7 +562,10 @@
    ,(first
      (apply-reduction-relation*
       -->ΛC
-      (load-ΛC (term ((mon ctc lib main true (λ (x) x)) true)))))))
+      (load-ΛC (term ((mon ctc lib main
+                           true
+                           (λ (x) x))
+                      true)))))))
  (term true))
 
 (test-equal
@@ -578,7 +574,9 @@
    ,(first
      (apply-reduction-relation*
       -->ΛC
-      (load-ΛC (term (mon j k l (if true true (queue)) (λ (x) x))))))))
+      (load-ΛC (term (mon j k l
+                          (if true true (queue))
+                          (λ (x) x))))))))
  (term (λ (x) x)))
 
 (test-equal
@@ -587,24 +585,98 @@
    ,(first
      (apply-reduction-relation*
       -->ΛC
-      (load-ΛC (term (mon j k l false true)))))))
+      (load-ΛC (term (mon j k l
+                          false
+                          true)))))))
  (term (err j k)))
 
-;; functions as contracts
+(test-equal
+ (term
+  (unload-ΛC
+   ,(first
+     (apply-reduction-relation*
+      -->ΛC
+      (load-ΛC (term (mon ctc lib main
+                          false
+                          (λ (x) x))))))))
+ (term (err ctc lib)))
 
-;; predicate contracts (`mon j k (λ (x) e) v`)
+;; Functions as contracts ======================================================
+;; (mon j k l (λ (x) e) v)
 
-;; arrow contracts
+;; Helper terms
+(define-term ~ (λ (x) (if x false true)))
+(define-term bool=? (λ (x) (λ (y) (if x y (~ y)))))
+
+;; Flat contracts
+;; i.e. the function used as the contract is a predicate (returns a boolean)
+(test-equal
+ (term
+  (unload-ΛC
+   ,(first
+     (apply-reduction-relation*
+      -->ΛC
+      (load-ΛC (term (mon j k l
+                          (λ (x) true)
+                          false)))))))
+ (term false))
+
+(test-equal
+ (term
+  (unload-ΛC
+   ,(first
+     (apply-reduction-relation*
+      -->ΛC
+      (load-ΛC (term (mon j k l
+                          (λ (x) false)
+                          false)))))))
+ (term (err j k)))
+
+(test-equal
+ (term
+  (unload-ΛC
+   ,(first
+     (apply-reduction-relation*
+      -->ΛC
+      (load-ΛC (term (mon j k l
+                          (bool=? true)
+                          false)))))))
+ (term (err j k)))
+
+(test-equal
+ (term
+  (unload-ΛC
+   ,(first
+     (apply-reduction-relation*
+      -->ΛC
+      (load-ΛC (term (mon j k l
+                          (bool=? false)
+                          false)))))))
+ (term false))
+
+
+
+;; Cascading contracts
+;; i.e. the function used as the contract returns a function contract
+
+
+
+
+;; Arrow contracts =============================================================
+
 
 ;; example that shows that effects aren't duplicated
 ;;   (maybe we just state that this is true; otherwise, we have to add effects to our language)
 ;;   could we use `add!` as our effect? idk how to check that `add!` is only called once though
 
+
 ;; example where contract itself is inconsistent, e.g.
 ;;   `(bool? -> bool?) ->i (λ (f) (f 42))` from paper, p. 16
 
+
 ;; `(mon j k v_κ v)` where v_κ is not a contract (should error)
 ;; i.e. attempting to attach something that's not a contract to an expression
+
 
 ;; attempting to attach an address (rather than a contract) to an expression
 (test-equal
@@ -665,7 +737,7 @@
 ;                               ;;
 
 (define-extended-language ΛT
-  Λ
+  ΛC
   (e ::= .... (tr e_κ e_p))) ;; trace contract
 
 ;; trace contract parameters:
@@ -679,7 +751,7 @@
   ;; surface syntax from ΛT and evaluation syntax from ΛC-eval
   ΛT∪ΛC-eval
   (e ::= .... (co α v_p))
-  (κ ::= (tr v v) (co α v))
+  (κ ::= .... (tr v v) (co α v))
   (E ::= .... (tr E e) (tr v E)))
 
 ;; collector parameters:
@@ -714,8 +786,9 @@
     [else (raise "load: expected a valid program")]))
 
 (define-metafunction ΛT-eval
-  unload-ΛT : ζ -> v
-  [(unload-ΛT (v σ)) v])
+  unload-ΛT : ζ -> e
+  [(unload-ΛT (v σ)) v]
+  [(unload-ΛT ((err j k) σ)) (err j k)])
 
 ;
 ;
@@ -983,7 +1056,7 @@
 
 
 (define-extended-language ΛU
-  Λ
+  Λ  ;; TODO: should extend ΛC, not Λ
   (e ::= .... (tr e e e)))
 
 (define-union-language ΛU∪ΛC-eval ΛU ΛC-eval)
@@ -995,7 +1068,6 @@
   (E ::= .... (tr E e e) (tr v E e) (tr v v E))
 
   )
-
 
 ;
 ;                                          ;
