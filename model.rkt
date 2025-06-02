@@ -28,7 +28,7 @@
   (e ::= b x f (o e) (if e e e) (e e) (queue) (add! e e) (seqn e e ...))
   (b ::= true false)
   (f ::= (λ (x) e))
-  (o ::= null? head tail)
+  (o ::= null? head tail consistent? alternating?)  ;; `consistent?` and `alternating?` are helpers
   (x y z ::= variable-not-otherwise-mentioned)
   #:binding-forms
   (λ (x) e #:refers-to x))
