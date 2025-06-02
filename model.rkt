@@ -975,14 +975,17 @@
         mon-trace]
    
    [--> ((in-hole E (mon k j (co v_κ α v_p) v)) σ)
-        ((in-hole E (add! α x_j (mon k j v_p α) v x_v)) σ)
+        ((in-hole E (seqn (where x_j (mon k j v_κ v))  
+                          (where x_j (x_v · j))
+                          (add! α x_j (mon k j v_p α) v x_v))) σ)
         ;; TODO: missing parenthesis before v_p
         ;; TODO: these operations should be performed in sequence; that's not what's
         ;; happening here
         
-        (where x_j (mon k j v_κ v))  ;; TODO: this should be x_v, not x_j
-        (where x_j (x_v · j))
-        mon-col]))
+        ;(where x_j (mon k j v_κ v))  ;; TODO: this should be x_v, not x_j
+        ;(where x_j (x_v · j))
+        mon-col]
+))
 
 (define (load-ΛU p)
   (cond
