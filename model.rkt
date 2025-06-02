@@ -39,6 +39,7 @@
   (ζ ::= (e σ))
   (e ::= .... α (err j k))
   (v ::= b f α)
+  (non-fun ::= b α)  ;; not in paper; added to simplify err-app case
   (E ::= hole (o E) (if E e e) (E e) (v E) (add! E e) (add! v E))
   (u ::= null (cons v α))  ;; store values
   (σ ::= ((α u) ...))  ;; store
@@ -164,10 +165,10 @@
 
    ;; TODO/question: will hardcoding `(err runtime REPL)` cause issues when we
    ;; get to a language that can have more nuanced errors?
-   [--> ((in-hole E (v_f v)) σ)
+   [--> ((in-hole E (non-fun v)) σ)
         ((in-hole E (err runtime REPL)) σ)
         ;; rule only fires if `v_f` is not a function
-        (side-condition (not (redex-match? Λ-eval f (term v_f))))
+        ;(side-condition (not (redex-match? Λ-eval f (term v_f))))
         err-app]
 
    [--> ((in-hole E (add! v_q v)) σ)
@@ -332,6 +333,7 @@
      (e · l))             ;; label application
 
   (v ::= .... κ (grd j k ω v))
+  (non-fun ::= .... (v ->i v) (grd j k ω v))  ;; not in paper
   (κ ::= b (λ (x) e) (v ->i v))
   (ω ::= true (v ->i v))
   (E ::= .... (E ->i e) (v ->i E) (mon j k E e) (mon j k v E) (E · l)))
@@ -555,12 +557,6 @@
 ;; This contract is not as expressive as it could be since we don't have many
 ;; primitive operations at our disposal.
 
-;; This doesn't reduce to a value b/c x is not a value
-#;
-(traces -->ΛC (load-ΛC (term (mon j k l
-                                  true
-                                  x))))
-
 ;; Identity function not applied to anything
 ;; TODO: I think what this currently evaluates to is actually correct,
 ;; since it results in a function that isn't applied to anything, and
@@ -577,49 +573,6 @@
  (term (λ (z) z)))
 
 ;; Identity function applied to something
-;; TODO: why does this have a point where two reduction rules fire at the same time?
-#;
-(traces -->ΛC (load-ΛC (term ((mon j k l
-                                   (true ->i Λ-bool=?)
-                                   (λ (z) z))
-                              false))))
-
-;; Answer: because if there is ever a pattern that looks like
-;; `((λ (x) e_C) v)`, where e_C is an expression in ΛC but is not an expression
-;; in Λ, then the expression will match the err-app case in the Λ reduction.
-
-;; This happens when we have (λ (x) (mon ...)) after the grd-fun reduction step.
-
-;; TODO: fix this. Is there a way to override an old reduction relation when
-;; using `extend-reduction-relation` or will we need to make a completely new
-;; reduction relation for each language and copy + paste all the old reductions?
-#;
-(redex-match ΛC-eval
-             ((in-hole E (v_f v)) σ)
-             (term
-              (((λ (x)
-                  (mon
-                   j
-                   k
-                   l
-                   ((λ (x) (λ (y) (if x y ((λ (x) (if x false true)) y))))
-                    ((mon j l true x) · j))
-                   ((λ (z) z) ((mon j l true x) · k))))
-                false)
-               ())))
-#;
-(redex-match Λ
-             f
-             (term
-              (λ (x)
-                (mon
-                 j
-                 k
-                 l
-                 ((λ (x) (λ (y) (if x y ((λ (x) (if x false true)) y)))) ((mon j l true x) · j))
-                 ((λ (z) z) ((mon j l true x) · k))))))
-
-
 (test-equal
  (eval-ΛC (term ((mon j k l
                       (true ->i Λ-bool=?)
@@ -672,6 +625,8 @@
  (term (err runtime REPL)))
 
 ;; TODO: attempting to attach other things that aren't addresses or contracts?
+
+;; Contracts for higher-order functions (multiple arrows)
 
 
 ;; =============================================================================
