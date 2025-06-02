@@ -25,7 +25,7 @@
 
 
 (define-language Λ
-  (e ::= b x f (o e) (if e e e) (e e) (queue) (add! e e))
+  (e ::= b x f (o e) (if e e e) (e e) (queue) (add! e e) (seqn e e ...))
   (b ::= true false)
   (f ::= (λ (x) e))
   (o ::= null? head tail)
@@ -39,7 +39,7 @@
   (ζ ::= (e σ))
   (e ::= .... α (err j k))
   (v ::= b f α)
-  (E ::= hole (o E) (if E e e) (E e) (v E) (add! E e) (add! v E))
+  (E ::= hole (o E) (if E e e) (E e) (v E) (add! E e) (add! v E) (seqn v ... E e ...))
   (u ::= null (cons v α))  ;; store values
   (σ ::= ((α u) ...))  ;; store
   (α ::= natural)
@@ -143,6 +143,11 @@
    [--> ((in-hole E (o v)) σ)
         ((in-hole E (delta o v σ)) σ)
         Λδ]
+
+   ;; sequenced operations
+   [--> ((in-hole E (v_1 ... v_2)) σ)
+        ((in-hole E v_2) σ)
+        Λseqn]
 
    ;; New rules from paper:
    [--> ((in-hole E (if v e_1 e_2)) σ)
@@ -858,59 +863,47 @@
 
 ;; Function that produces the same value every time (server blame ex.)
 (test-equal
- (eval-ΛT (term ((λ (f) ((λ (_)
-                           ((λ (_)
-                              ((λ (_)
-                                 (f true)) ;; fourth
-                               (f true)))  ;; third
-                            (f true)))     ;; second
-                         (f true)))        ;; first
+ (eval-ΛT (term ((λ (f) (seqn (f true)
+                              (f true)
+                              (f true)
+                              (f true)))
                  ((mon ctc lib main
                        (tr (λ (coll) (true ->i coll))
-                           Λ-same?)))
-                 (λ (x) x))))
+                           Λ-same?))
+                  (λ (x) x)))))
  true)
 
 ;; ... Above, trying all false return values
 (test-equal
- (eval-ΛT (term ((λ (f) ((λ (_)
-                           ((λ (_)
-                              ((λ (_)
-                                 (f false)) ;; fourth
-                               (f false)))  ;; third
-                            (f false)))     ;; second
-                         (f false)))        ;; first
+ (eval-ΛT (term ((λ (f) (seqn (f false)
+                              (f false)
+                              (f false)
+                              (f false)))
                  ((mon ctc lib main
                        (tr (λ (coll) (true ->i coll))
-                           Λ-same?)))
-                 (λ (x) x))))
+                           Λ-same?))
+                  (λ (x) x)))))
  true)
 
 ;; ... Above, but trace violates predicate
 (test-equal
- (eval-ΛT (term ((λ (f) ((λ (_)
-                           ((λ (_)
-                              ((λ (_)
-                                 (f false)) ;; fourth
-                               (f true)))  ;; third
-                            (f false)))     ;; second
-                         (f false)))        ;; first
+ (eval-ΛT (term ((λ (f) (seqn (f false)
+                              (f false)
+                              (f true)
+                              (f false)))
                  ((mon ctc lib main
                        (tr (λ (coll) (true ->i coll))
-                           Λ-same?)))
-                 (λ (x) x))))
+                           Λ-same?))
+                  (λ (x) x)))))
  ;; lib gets blamed, since it promised identical return values
  (term (err ctc lib)))
 
 ;; Function that accepts an alternating stream (client blame ex.)
 (test-equal
- (eval-ΛT (term ((λ (f) ((λ (_)
-                           ((λ (_)
-                              ((λ (_)
-                                 (f true)) ;; fourth
-                               (f false))) ;; third
-                            (f true)))     ;; second
-                         (f false)))       ;; first
+ (eval-ΛT (term ((λ (f) (seqn (f true)
+                              (f false)
+                              (f true)
+                              (f false)))
                  ((mon ctc lib main
                        (tr (λ (coll) (coll ->i true))
                            Λ-alternating?))
@@ -919,13 +912,10 @@
 
 ;; ... Above, but trace violates predicate
 (test-equal
- (eval-ΛT (term ((λ (f) ((λ (_)
-                           ((λ (_)
-                              ((λ (_)
-                                 (f true)) ;; fourth
-                               (f false))) ;; third
-                            (f true)))     ;; second
-                         (f false)))       ;; first
+ (eval-ΛT (term ((λ (f) (seqn (f true)
+                              (f false)
+                              (f false)
+                              (f true)))
                  ((mon ctc lib main
                        (tr (λ (coll) (coll ->i true))
                            Λ-alternating?))
