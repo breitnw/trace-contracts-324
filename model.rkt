@@ -465,7 +465,7 @@
 ;
 
 
-;; Λ tests using -->ΛC to make sure that ΛC correctly *extends* Λ
+;; Λ tests using -->ΛC to make sure that ΛC correctly extends Λ
 (test-equal
  (term
   (unload-ΛC
@@ -531,19 +531,9 @@
                         (head (add! (add! (add! (queue) (λ (x) x)) (λ (x) false)) false)))))))))
  (term (λ (x) x)))
 
-;; example from paper, section 4.3
-#;
-(test-equal
- (term
-  (unload-ΛC
-   ,(first
-     (apply-reduction-relation*
-      -->ΛC
-      (load-ΛC (term ?)))))))
-
 ;; TODO: write tests that actually use contracts
 
-;; true and false as contracts (p. 15)
+;; Booleans as contracts (p. 15) ===============================================
 (test-equal
  (term
   (unload-ΛC
@@ -589,11 +579,25 @@
       (load-ΛC (term (mon j k l false true)))))))
  (term (err j k)))
 
-;; functions as contracts
+(test-equal
+ (term
+  (unload-ΛC
+   ,(first
+     (apply-reduction-relation*
+      -->ΛC
+      (load-ΛC (term (mon ctc lib main false (λ (x) x))))))))
+ (term (err ctc lib)))
+
+;; Functions as contracts ======================================================
 
 ;; predicate contracts (`mon j k (λ (x) e) v`)
 
-;; arrow contracts
+
+;; function that returns a function contract
+
+
+
+;; Arrow contracts
 
 ;; example that shows that effects aren't duplicated
 ;;   (maybe we just state that this is true; otherwise, we have to add effects to our language)
@@ -730,7 +734,7 @@
 ;
 ;
 ;
-
+#|
 ;; Trace contract as a value
 (test-equal
  (term
@@ -891,7 +895,7 @@
   (E ::= .... (tr E e e) (tr v E e) (tr v v E))
 
   )
-
+|#
 
 ;
 ;                                          ;
