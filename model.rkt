@@ -662,6 +662,7 @@
       (apply-reduction-relation*
        -->ΛT
        (load-ΛT t))))))
+
 ;
 ;
 ;     ;;   ;;;;;;;         ;                    ;
@@ -860,7 +861,6 @@
 ;                                ;
 ;                               ;;
 
-
 (define-extended-language ΛU
   Λ  ;; TODO: should extend ΛC, not Λ
   (e ::= .... (tr e e e)))
@@ -938,8 +938,6 @@
 ;
 ;
 
-
-
 ; TODO
 
 
@@ -951,9 +949,15 @@
 
 
 ;; =============================================================================
-;;                                APPENDIX: DELTA
+;;                         SECTION 6 : RANDOMIZED TESTING
 ;; =============================================================================
 
+;; TODO: add randomized testing
+
+
+;; =============================================================================
+;;                                APPENDIX : DELTA
+;; =============================================================================
 
 ;
 ;     ;        ;                                ;
@@ -1012,10 +1016,6 @@
 (test-match Λ-eval
             true
             (term (delta null? 4 ((0 (cons (λ (x) x) 2)) (1 (cons true 3)) (2 null) (3 (cons 0 4)) (4 null)))))
-
-#;
-(test-equal (term (delta null? 0 ((0 null))))
-            (term true))
 
 ;; ============
 ;; |  `head`  |
