@@ -351,10 +351,12 @@
 
 ;; `(mon j k l e_κ e_c)` is a monitor that attaches contract e_κ to e_c.
 ;; The value of e_c is dubbed the "carrier" of the contract.
-;; j, k, and l are labels that name the parties that agreed to the contract:
-;; j is the contract-defining module,
-;; k is the server module, and
-;; l is the client module.
+;; j, k, and l name the parties that agreed to the contract.
+
+;; monitor labels:
+;; - j :: contract-defining module
+;; - k :: server module
+;; - l :: client module
 
 ;; KEY IDEA: monitors are what Kaylie and Joanna called "obligations"
 
@@ -365,20 +367,15 @@
      (mon j k l e_κ e_c)) ;; three-label monitor
   (j k l ::= x))          ;; label
 
-;; monitor labels:
-;; - j :: contract-defining module
-;; - k :: server module
-;; - l :: client module
-
 (define-union-language ΛC∪Λ-eval ΛC Λ-eval)
 
 (define-extended-language ΛC-eval
   ;; inherit surface syntax from ΛC and evaluation syntax from Λ-eval
   ΛC∪Λ-eval
   (e ::= ....
-     (mon j k e e)        ;; two-label monitor
-     (grd j k ω v)        ;; guard
-     (e · l))             ;; label application
+     (mon j k e e) ;; two-label monitor
+     (grd j k ω v) ;; guard
+     (e · l))      ;; label application
 
   (v ::= .... κ (grd j k ω v))
   (non-fun ::= .... (v ->i v) (grd j k ω v))  ;; not in paper
