@@ -521,7 +521,9 @@
 (define-term Λ-not (λ (x) (if x false true)))
 (define-term Λ-bool=? (λ (x) (λ (y) (if x y (Λ-not y)))))
 
-;; Flat contracts
+;; ====================
+;; |  Flat contracts  |
+;; ====================
 ;; i.e. the function used as the contract is a predicate (returns a boolean)
 (test-equal
  (eval-ΛC (term (mon j k l
@@ -558,49 +560,34 @@
  (eval-ΛC (term (mon j k l
                      (λ (x) x)
                      false)))
- (term (err _ _)))
+ (term (err j k)))
 
-;; Cascading contracts
+;; =========================
+;; |  Cascading contracts  |
+;; =========================
 ;; i.e. the function used as the contract returns a function contract
 
 ;; TODO
 
 
 ;; Arrow contracts =============================================================
+
 ;; E.g. program 4.1 from paper (p. 15)
 ;; TODO: need to add concept of equality to our language to make this work
 ;(mon ctc lib main (true ->i (λ (x) (λ (y) x == y))) (λ (z) z))
 
-;; Contract on the identity function
+;; =======================
+;; |  Identity function  |
+;; =======================
+
 ;; This contract is not as expressive as it could be since we don't have many
 ;; primitive operations at our disposal.
-
-;; Identity function not applied to anything
-
-;; I think what this currently evaluates to is actually correct,
-;; since it results in a function that isn't applied to anything, and
-;; our language isn't supposed to reduce inside a function expression
-
-;; TODO: Is this actually correct?
-#;
-(traces -->ΛC (load-ΛC (term (mon j k l
-                                  (true ->i (λ (x) (λ (y) ((Λ-bool=? x) y))))
-                                  (λ (z) z)))))
-#;
-(test-equal
- (eval-ΛC (term (mon j k l
-                     (true ->i Λ-bool=?)
-                     (λ (z) z))))
- (term (λ (z) z)))
-
-;; Identity function applied to something
 (test-equal
  (eval-ΛC (term ((mon j k l
                       (true ->i Λ-bool=?)
                       (λ (z) z))
                  false)))
  (term false))
-
 (test-equal
  (eval-ΛC (term ((mon j k l
                       (true ->i Λ-bool=?)
@@ -608,20 +595,41 @@
                  true)))
  (term true))
 
-;; Incorrect identity function; contract raises an error
+
+;; This new function doesn't satisfy the contract for the identity function.
+;; Contract blames the server module because it defined the function in a way that
+;; doesn't satisfy the contract.
 (test-equal
- (eval-ΛC (term ((mon j k l
+ (eval-ΛC (term ((mon ctc serv client
                       (true ->i Λ-bool=?)
                       (λ (z) (Λ-not z)))
                  true)))
- (term (err _ _)))
-
+ (term (err ctc serv)))
 (test-equal
- (eval-ΛC (term ((mon j k l
+ (eval-ΛC (term ((mon ctc serv client
                       (true ->i Λ-bool=?)
                       (λ (z) (Λ-not z)))
                  false)))
- (term (err _ _)))
+ (term (err ctc serv)))
+
+
+;; =======================================================
+;; |  Contract that restricts the input type to `false`  |
+;; =======================================================
+(test-equal
+ (eval-ΛC (term ((mon j k l
+                      ((Λ-bool=? false) ->i (λ (x) true))
+                      (λ (x) x))
+                 false)))
+ (term false))
+
+;; Blames the client module because it passed in the wrong thing (`true`)
+(test-equal
+ (eval-ΛC (term ((mon ctc serv client
+                      ((Λ-bool=? false) ->i (λ (x) true))
+                      (λ (x) x))
+                 true)))
+ (term (err ctc client)))
 
 
 ;; TODO: more arrow contracts
@@ -994,7 +1002,7 @@
         ;(where x_j (mon k j v_κ v))  ;; TODO: this should be x_v, not x_j
         ;(where x_j (x_v · j))
         mon-col]
-))
+   ))
 
 (define (load-ΛU p)
   (cond
