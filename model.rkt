@@ -954,7 +954,7 @@
 ;                               ;;
 
 (define-extended-language ΛU
-  Λ  ;; TODO: should extend ΛC, not Λ
+  ΛC ;; TODO: should extend ΛC, not Λ
   (e ::= .... (tr e e e)))
 
 (define-union-language ΛU∪ΛC-eval ΛU ΛC-eval)
@@ -988,7 +988,7 @@
    ΛU-eval
 
    [-->((in-hole E (mon k j (tr v_κ v_b v_p))) σ)
-       ((in-hole E (mon k j v_b (co v_κ α v_p) v)) in-hole σ (α -> null))
+       ((in-hole E (mon k j v_b (co v_κ α v_p) v)) (in-hole E (next σ))(extend σ))
        mon-trace]
    [--> ((in-hole E (mon k j (co v_κ α v_p) v)) σ)
         ((in-hole E (add! α x_j (mon k j v_p α) v x_v)) σ)
