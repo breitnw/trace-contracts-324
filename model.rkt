@@ -725,8 +725,17 @@
   (extend-reduction-relation
    -->ΛC
    ΛT-eval
-   ;; TODO
-   ))
+   
+   [--> ((in-hole E (mon j k (tr v_b v_p) v)) σ)
+        ((in-hole E (mon j k (v_b (co α v_p)) v)) σ_1)
+        (where α (next σ))
+        (where σ_1 (extend σ))
+        mon-trace]
+
+   [--> ((in-hole E (mon j k (co α v_p) v)) σ)
+        ((in-hole E (mon j k (v_p (add! α v)) v)) σ)
+        mon-col]))
+
 
 (define (load-ΛT p)
   (cond
