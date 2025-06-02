@@ -66,6 +66,14 @@
 ;
 ;
 
+;; Convert a Racket boolean to a Λ boolean
+(define (Λ->bool t)
+  (cond [(eq? t (term true)) #t]
+        [(eq? t (term false)) #f]))
+
+;; Convert a Λ boolean to a Racket boolean
+(define (bool->Λ b)
+  (if b (term true) (term false)))
 
 (define-metafunction Λ-eval
   delta : o v σ -> e
@@ -86,6 +94,40 @@
    (err runtime REPL)]
   [(delta tail α ((α_1 u_1) ... (α (cons v α_3)) (α_2 u_2) ...))
    α_3]
+
+  ;; CONVENIENCE: we have added several delta operations not included in the
+  ;; paper, namely the `consistent?` and `alternating?` predicates. This is
+  ;; for the sake of legibility, since traces quickly become a mess when using
+  ;; the Y-combinator.
+  [(delta consistent? α ((α_1 u_1) ... (α null) (α_2 u_2) ...))
+   true]
+
+  [(delta consistent? α σ)
+   true
+   (where ((_ _) ... (α   (cons _ α_t)) (_ _) ...) σ)
+   (where ((_ _) ... (α_t null)         (_ _) ...) σ)]
+
+  [(delta consistent? α σ)
+   ,(bool->Λ
+     (and (boolean=? (Λ->bool (term v_1)) (Λ->bool (term v_2)))
+          (Λ->bool (term (delta consistent? α_t σ)))))
+   (where ((_ _) ... (α   (cons v_1 α_t)) (_ _) ...) σ)
+   (where ((_ _) ... (α_t (cons v_2 _))   (_ _) ...) σ)]
+
+  [(delta alternating? α ((α_1 u_1) ... (α null) (α_2 u_2) ...))
+   true]
+
+  [(delta alternating? α σ)
+   true
+   (where ((_ _) ... (α   (cons _ α_t)) (_ _) ...) σ)
+   (where ((_ _) ... (α_t null)         (_ _) ...) σ)]
+
+  [(delta alternating? α σ)
+   ,(bool->Λ
+     (and (not (boolean=? (Λ->bool (term v_1)) (Λ->bool (term v_2))))
+          (Λ->bool (term (delta alternating? α_t σ)))))
+   (where ((_ _) ... (α   (cons v_1 α_t)) (_ _) ...) σ)
+   (where ((_ _) ... (α_t (cons v_2 _))   (_ _) ...) σ)]
 
   ;; v ∉ Addr
   [(delta o v σ)
@@ -824,25 +866,6 @@
 
 ;; Trace predicate tests =======================================================
 
-;; More helper terms
-(define-term Λ-and (λ (a) (λ (b) (if a b false))))
-(define-term Λ-or (λ (a) (λ (b) (if a true b))))
-(define-term Λ-Y (λ (f) (λ (x) (f (x x))) (λ (x) (f (x x)))))
-(define-term Λ-alternating?
-  (Λ-Y (λ (self)
-         (λ (q)
-           (if ((Λ-or (null? q)) (null? (tail q)))
-               true
-               ((Λ-and (Λ-not ((Λ-bool=? (head q)) (head (tail q)))))
-                (self (tail q))))))))
-(define-term Λ-same?
-  (Λ-Y (λ (self)
-         (λ (q)
-           (if ((Λ-or (null? q)) (null? (tail q)))
-               true
-               ((Λ-and ((Λ-bool=? (head q)) (head (tail q))))
-                (self (tail q))))))))
-
 ;; Trace contract that rejects all traces, blaming main
 (test-equal
  (eval-ΛT (term ((λ (f) (f false))
@@ -872,7 +895,7 @@
                               (f true)))
                  ((mon ctc lib main
                        (tr (λ (coll) (true ->i coll))
-                           Λ-same?))
+                           Λ-consistent?))
                   (λ (x) x)))))
  true)
 
@@ -884,7 +907,7 @@
                               (f false)))
                  ((mon ctc lib main
                        (tr (λ (coll) (true ->i coll))
-                           Λ-same?))
+                           Λ-consistent?))
                   (λ (x) x)))))
  true)
 
@@ -896,7 +919,7 @@
                               (f false)))
                  ((mon ctc lib main
                        (tr (λ (coll) (true ->i coll))
-                           Λ-same?))
+                           Λ-consistent?))
                   (λ (x) x)))))
  ;; lib gets blamed, since it promised identical return values
  (term (err ctc lib)))
