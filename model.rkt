@@ -540,7 +540,9 @@
    ,(first
      (apply-reduction-relation*
       -->ΛC
-      (load-ΛC (term (mon j k l true false)))))))
+      (load-ΛC (term (mon j k l
+                          true
+                          false)))))))
  (term false))
 
 (test-equal
@@ -549,7 +551,9 @@
    ,(first
      (apply-reduction-relation*
       -->ΛC
-      (load-ΛC (term (mon ctc lib main true false)))))))
+      (load-ΛC (term (mon ctc lib main
+                          true
+                          false)))))))
  (term false))
 
 (test-equal
@@ -558,7 +562,10 @@
    ,(first
      (apply-reduction-relation*
       -->ΛC
-      (load-ΛC (term ((mon ctc lib main true (λ (x) x)) true)))))))
+      (load-ΛC (term ((mon ctc lib main
+                           true
+                           (λ (x) x))
+                      true)))))))
  (term true))
 
 (test-equal
@@ -567,7 +574,9 @@
    ,(first
      (apply-reduction-relation*
       -->ΛC
-      (load-ΛC (term (mon j k l (if true true (queue)) (λ (x) x))))))))
+      (load-ΛC (term (mon j k l
+                          (if true true (queue))
+                          (λ (x) x))))))))
  (term (λ (x) x)))
 
 (test-equal
@@ -576,7 +585,9 @@
    ,(first
      (apply-reduction-relation*
       -->ΛC
-      (load-ΛC (term (mon j k l false true)))))))
+      (load-ΛC (term (mon j k l
+                          false
+                          true)))))))
  (term (err j k)))
 
 (test-equal
@@ -585,11 +596,17 @@
    ,(first
      (apply-reduction-relation*
       -->ΛC
-      (load-ΛC (term (mon ctc lib main false (λ (x) x))))))))
+      (load-ΛC (term (mon ctc lib main
+                          false
+                          (λ (x) x))))))))
  (term (err ctc lib)))
 
 ;; Functions as contracts ======================================================
 ;; (mon j k l (λ (x) e) v)
+
+;; Helper terms
+(define-term ~ (λ (x) (if x false true)))
+(define-term bool=? (λ (x) (λ (y) (if x y (~ y)))))
 
 ;; Flat contracts
 ;; i.e. the function used as the contract is a predicate (returns a boolean)
@@ -599,7 +616,9 @@
    ,(first
      (apply-reduction-relation*
       -->ΛC
-      (load-ΛC (term (mon j k l (λ (x) true) false)))))))
+      (load-ΛC (term (mon j k l
+                          (λ (x) true)
+                          false)))))))
  (term false))
 
 (test-equal
@@ -608,8 +627,32 @@
    ,(first
      (apply-reduction-relation*
       -->ΛC
-      (load-ΛC (term (mon j k l (λ (x) false) false)))))))
+      (load-ΛC (term (mon j k l
+                          (λ (x) false)
+                          false)))))))
  (term (err j k)))
+
+(test-equal
+ (term
+  (unload-ΛC
+   ,(first
+     (apply-reduction-relation*
+      -->ΛC
+      (load-ΛC (term (mon j k l
+                          (bool=? true)
+                          false)))))))
+ (term (err j k)))
+
+(test-equal
+ (term
+  (unload-ΛC
+   ,(first
+     (apply-reduction-relation*
+      -->ΛC
+      (load-ΛC (term (mon j k l
+                          (bool=? false)
+                          false)))))))
+ (term false))
 
 
 
@@ -761,7 +804,7 @@
 ;
 ;
 ;
-
+#|
 ;; Trace contract as a value
 (test-equal
  (term
@@ -773,7 +816,7 @@
  (term (tr true true)))
 
 ;; TODO example of ctc being blamed
-#|
+
 ;; Body contract tests =========================================================
 
 ;; Note the modules in effect:
@@ -781,9 +824,9 @@
 ;; - server module   :: lib
 ;; - client module   :: main
 
-;; Helper terms
-(define-term not (λ (x) (if x false true)))
-(define-term bool=? (λ (x) (λ (y) (if x y (not y)))))
+;; Helper terms (reminder)
+;; (define-term not (λ (x) (if x false true)))
+;; (define-term bool=? (λ (x) (λ (y) (if x y (not y)))))
 
 ;; Trace contract that collects function results, accepts all traces
 (test-equal
