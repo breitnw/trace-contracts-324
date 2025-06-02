@@ -493,8 +493,8 @@
 ;; (mon j k l (λ (x) e) v)
 
 ;; Helper terms
-(define-term ~ (λ (x) (if x false true)))
-(define-term bool=? (λ (x) (λ (y) (if x y (~ y)))))
+(define-term Λ-not (λ (x) (if x false true)))
+(define-term Λ-bool=? (λ (x) (λ (y) (if x y (Λ-not y)))))
 
 ;; Flat contracts
 ;; i.e. the function used as the contract is a predicate (returns a boolean)
@@ -512,13 +512,13 @@
 
 (test-equal
  (eval-ΛC (term (mon j k l
-                     (bool=? true)
+                     (Λ-bool=? true)
                      false)))
  (term (err j k)))
 
 (test-equal
  (eval-ΛC (term (mon j k l
-                     (bool=? false)
+                     (Λ-bool=? false)
                      false)))
  (term false))
 
@@ -676,10 +676,6 @@
 ;; - contract module :: ctc
 ;; - server module   :: lib
 ;; - client module   :: main
-
-;; Helper terms
-(define-term Λ-not (λ (x) (if x false true)))
-(define-term Λ-bool=? (λ (x) (λ (y) (if x y (Λ-not y)))))
 
 ;; Trace contract that collects function results, accepts all traces
 (test-equal
