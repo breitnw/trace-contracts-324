@@ -589,25 +589,51 @@
  (term (err ctc lib)))
 
 ;; Functions as contracts ======================================================
+;; (mon j k l (λ (x) e) v)
 
-;; predicate contracts (`mon j k (λ (x) e) v`)
+;; Flat contracts
+;; i.e. the function used as the contract is a predicate (returns a boolean)
+(test-equal
+ (term
+  (unload-ΛC
+   ,(first
+     (apply-reduction-relation*
+      -->ΛC
+      (load-ΛC (term (mon j k l (λ (x) true) false)))))))
+ (term false))
+
+(test-equal
+ (term
+  (unload-ΛC
+   ,(first
+     (apply-reduction-relation*
+      -->ΛC
+      (load-ΛC (term (mon j k l (λ (x) false) false)))))))
+ (term (err j k)))
 
 
-;; function that returns a function contract
+
+;; Cascading contracts
+;; i.e. the function used as the contract returns a function contract
 
 
 
-;; Arrow contracts
+
+;; Arrow contracts =============================================================
+
 
 ;; example that shows that effects aren't duplicated
 ;;   (maybe we just state that this is true; otherwise, we have to add effects to our language)
 ;;   could we use `add!` as our effect? idk how to check that `add!` is only called once though
 
+
 ;; example where contract itself is inconsistent, e.g.
 ;;   `(bool? -> bool?) ->i (λ (f) (f 42))` from paper, p. 16
 
+
 ;; `(mon j k v_κ v)` where v_κ is not a contract (should error)
 ;; i.e. attempting to attach something that's not a contract to an expression
+
 
 ;; attempting to attach an address (rather than a contract) to an expression
 (test-equal
@@ -668,7 +694,7 @@
 ;                               ;;
 
 (define-extended-language ΛT
-  Λ
+  Λ  ;; TODO: should extend ΛC, not Λ
   (e ::= .... (tr e_κ e_p))) ;; trace contract
 
 ;; trace contract parameters:
@@ -682,7 +708,7 @@
   ;; surface syntax from ΛT and evaluation syntax from ΛC-eval
   ΛT∪ΛC-eval
   (e ::= .... (co α v_p))
-  (κ ::= (tr v v) (co α v))
+  (κ ::= (tr v v) (co α v))  ;; TODO: add `....` to start
   (E ::= .... (tr E e) (tr v E)))
 
 ;; collector parameters:
@@ -716,6 +742,7 @@
     [(redex-match? ΛT e p) (term (,p ()))]
     [else (raise "load: expected a valid program")]))
 
+;; TODO: modify in same way other unloaders were modified
 (define-metafunction ΛT-eval
   unload-ΛT : ζ -> v
   [(unload-ΛT (v σ)) v])
@@ -734,7 +761,7 @@
 ;
 ;
 ;
-#|
+
 ;; Trace contract as a value
 (test-equal
  (term
@@ -746,7 +773,7 @@
  (term (tr true true)))
 
 ;; TODO example of ctc being blamed
-
+#|
 ;; Body contract tests =========================================================
 
 ;; Note the modules in effect:
@@ -883,7 +910,7 @@
 
 
 (define-extended-language ΛU
-  Λ
+  Λ  ;; TODO: should extend ΛC, not Λ
   (e ::= .... (tr e e e)))
 
 (define-union-language ΛU∪ΛC-eval ΛU ΛC-eval)
