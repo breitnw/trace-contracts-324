@@ -311,7 +311,34 @@
                    (head (add! (add! (add! (queue) (λ (x) x)) (λ (x) false)) false)))))
  (term (λ (x) x)))
 
-;; TODO: test `seqn`
+;; `seqn`
+(test-equal
+ (eval-Λ (term (seqn true)))
+ (term true))
+
+(test-equal
+ (eval-Λ (term (seqn true
+                     false)))
+ (term false))
+
+(test-equal
+ (first
+  (apply-reduction-relation*
+   -->Λ
+   (load-Λ 
+    (term (seqn (queue)
+                false)))))
+ '(false ((0 null))))
+
+(test-equal
+ (first
+  (apply-reduction-relation*
+   -->Λ
+   (load-Λ 
+    (term (seqn (queue)
+                (add! (queue) true)
+                false)))))
+ '(false ((2 null) (1 (cons true 2)) (0 null))))
 
 ;; Errors ======================================================================
 
@@ -447,11 +474,11 @@
    [--> ((in-hole E ((grd j k (v_d ->i v_c) v) · l)) σ)
         ((in-hole E (λ (x)
                       ((λ (x_g)
-                        ((λ (x_j)
-                           ((λ (x_k) (mon j k l (v_c x_j) (v x_k)))
-                            (x_g · k)))   ;; let x_k = (x_g · k)
-                         (x_g · j)))      ;; let x_j = (x_g · j)
-                      (mon j l v_d x))))  ;; let x_g = (mon j l v_d x)
+                         ((λ (x_j)
+                            ((λ (x_k) (mon j k l (v_c x_j) (v x_k)))
+                             (x_g · k)))   ;; let x_k = (x_g · k)
+                          (x_g · j)))      ;; let x_j = (x_g · j)
+                       (mon j l v_d x))))  ;; let x_g = (mon j l v_d x)
          σ)
         ;; we can't use "where", since it does not evaluate arguments before
         ;; substituting. Instead, since the language does not have
