@@ -938,6 +938,13 @@
 ;                                ;
 ;                               ;;
 
+;; `(tr v_κ v_b v_p)`
+;; v_b and v_p are the same as in ΛT, i.e.:
+;; - v_b :: body contract constructor
+;; - v_p :: trace predicate
+
+;; v_κ pairs each trace variable with a contract that governs collected values.
+
 (define-extended-language ΛU
   ΛC
   (e ::= .... (tr e e e)))
@@ -1019,7 +1026,55 @@
 ;
 ;
 
-; TODO
+;; Every collected value must be `false`
+(traces -->ΛU
+        (load-ΛU (term
+                  ((mon ctc serv client
+                        (tr (Λ-bool=? false)
+                            (λ (coll) (true ->i coll))
+                            (λ (x) true))
+                        (λ (y) y))
+                   false))))
+
+(redex-match? ΛU
+              (mon j k l e_1 e_2)
+              (term (mon ctc serv client
+                         (tr (Λ-bool=? false)
+                             (λ (coll) (true ->i coll))
+                             (λ (x) true))
+                         (λ (y) y))))
+
+(redex-match? ΛU
+              e
+              (term (tr (Λ-bool=? false)
+                        (λ (coll) (true ->i coll))
+                        (λ (x) true))))
+
+(redex-match? ΛU
+              (tr e_1 e_2 e_3)
+              (term (tr (Λ-bool=? false)
+                        (λ (coll) (true ->i coll))
+                        (λ (x) true))))
+
+(redex-match? ΛU
+              ((mon j k l e_1 e_2) e_3)
+              (term ((mon ctc serv client
+                          (tr (Λ-bool=? false)
+                              (λ (coll) (true ->i coll))
+                              (λ (x) true))
+                          (λ (y) y))
+                     false)))
+
+(test-equal
+ (eval-ΛU
+  (term
+   ((mon ctc serv client
+         (tr (Λ-bool=? false)
+             (λ (coll) (true ->i coll))
+             (λ (x) true))
+         (λ (y) y))
+    false)))
+ (term false))
 
 
 ;; =============================================================================
