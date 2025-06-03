@@ -100,6 +100,7 @@
   ;; for the sake of legibility, since traces quickly become a mess when using
   ;; the Y-combinator.
 
+  ;; consistent?
   [(delta consistent? α ((α_1 u_1) ... (α null) (α_2 u_2) ...))
    true]
 
@@ -115,6 +116,7 @@
    (where ((_ _) ... (α   (cons v_1 α_t)) (_ _) ...) σ)
    (where ((_ _) ... (α_t (cons v_2 _))   (_ _) ...) σ)]
 
+  ;; alternating?
   [(delta alternating? α ((α_1 u_1) ... (α null) (α_2 u_2) ...))
    true]
 
@@ -1045,11 +1047,13 @@
   (extend-reduction-relation
    -->ΛC
    ΛU-eval
+   
    [--> ((in-hole E (mon j k (tr v_κ v_b v_p) v)) σ)
         ((in-hole E (mon j k (v_b (co v_κ α v_p)) v)) σ_2)
         (where α (next σ))
         (where σ_2 (extend σ))
         mon-trace]
+   
    [--> ((in-hole E (mon j k (co v_κ α v_p) v)) σ)
         ((in-hole E (seqn (add! α e_j)
                           (mon j k (v_p α) v)
@@ -1058,6 +1062,7 @@
         (where e_v (mon j k v_κ v))
         (where e_j (e_v · j))
         mon-col]))
+
 
 (define (load-ΛU p)
   (cond
@@ -1092,17 +1097,62 @@
 ;
 ;
 
+;; Output is collected
 ;; Every collected value must be `false`
 (test-equal
  (eval-ΛU
   (term
    ((mon ctc serv client
-         (tr (Λ-bool=? false)
-             (λ (coll) (true ->i (λ (x) coll)))
-             (λ (x) true))
+         (tr (λ (tr-var) (ff? tr-var))
+             (λ (coll) (true ->i (λ (in) coll)))
+             (λ (addr) true))
          (λ (y) y))
     false)))
  (term false))
+
+;; ... Same as above, but with input that makes the contract fail
+
+;; Note that the input itself is not the problem, but rather the function was
+;; broken all along, it just happened to output a value that satisfied the
+;; contract in the case above.
+(test-equal
+ (eval-ΛU
+  (term
+   ((mon ctc serv client
+         (tr (λ (tr-var) (ff? tr-var))
+             (λ (coll) (true ->i (λ (in) coll)))
+             (λ (addr) true))
+         (λ (y) y))
+    true)))
+ (term (err ctc serv)))
+;; Server module gets blamed since the server provided the function `(λ (x) true)`
+;; that violates the contract
+
+;; Input is collected
+(test-equal
+ (eval-ΛU
+  (term
+   ((mon ctc serv client
+         (tr (λ (tr-var) (tt? tr-var))
+             (λ (coll) (coll ->i (λ (in) true)))
+             (λ (addr) true))
+         (λ (y) y))
+    true)))
+ (term true))
+
+;; ... Same as above, but with input that violates the contract
+(test-equal
+ (eval-ΛU
+  (term
+   ((mon ctc serv client
+         (tr (λ (tr-var) (tt? tr-var))
+             (λ (coll) (coll ->i (λ (in) true)))
+             (λ (addr) true))
+         (λ (y) y))
+    false)))
+ (term (err ctc client)))
+;; Client module is blamed since it provides the input (false) that violates
+;; the trace variable contract
 
 
 ;; every collected value must be 'natural'
