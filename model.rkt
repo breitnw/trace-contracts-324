@@ -927,9 +927,9 @@
                               (f true)))
                  (mon ctc lib main
                       (tr (λ (coll) (true ->i (λ (in) coll)))
-                          (λ (q) (Λ-consistent? q)))
+                          (λ (q) (consistent? q)))
                       (λ (x) x)))))
- true)
+ (term true))
 
 ;; ... Above, trying all false return values
 (test-equal
@@ -939,9 +939,9 @@
                               (f false)))
                  (mon ctc lib main
                       (tr (λ (coll) (true ->i (λ (in) coll)))
-                          (λ (q) (Λ-consistent? q)))
+                          (λ (q) (consistent? q)))
                       (λ (x) x)))))
- true)
+ (term false))
 
 ;; ... Above, but trace violates predicate
 (test-equal
@@ -951,7 +951,7 @@
                               (f false)))
                  (mon ctc lib main
                       (tr (λ (coll) (true ->i (λ (in) coll)))
-                          (λ (q) (Λ-consistent? q)))
+                          (λ (q) (consistent? q)))
                       (λ (x) x)))))
  ;; lib gets blamed, since it promised identical return values
  (term (err ctc lib)))
@@ -964,9 +964,9 @@
                               (f false)))
                  (mon ctc lib main
                       (tr (λ (coll) (coll ->i (λ (in) true)))
-                          (λ (q) (Λ-alternating? q)))
+                          (λ (q) (alternating? q)))
                       (λ (x) true)))))
- true)
+ (term true))
 
 ;; ... Above, but trace violates predicate
 (test-equal
@@ -976,7 +976,7 @@
                               (f true)))
                  (mon ctc lib main
                       (tr (λ (coll) (coll ->i (λ (in) true)))
-                          (λ (q) (Λ-alternating? q)))
+                          (λ (q) (alternating? q)))
                       (λ (x) true)))))
  ;; main gets blamed, since it produced the collected value
  (term (err ctc main)))
@@ -1542,3 +1542,4 @@
 (test-match Λ-eval
             (err runtime REPL)
             (term (delta tail (λ (x) 0) ((0 null) (1 (cons (λ (x) true) 2)) (2 null)))))
+
