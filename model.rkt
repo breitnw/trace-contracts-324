@@ -851,7 +851,7 @@
 (test-equal
  (eval-ΛT (term ((λ (f) (f false))
                  (mon ctc lib main
-                      (tr (λ (coll) ((λ (v) (ff? v)) ->i coll))
+                      (tr (λ (coll) ((λ (v) (ff? v)) ->i (λ (in) coll)))
                           (λ (trace) true))
                       (λ (x) false)))))
  (term false))
@@ -859,20 +859,21 @@
 #;
 (traces -->ΛT
         (term (((λ (f) (f false))
-                 (mon ctc lib main
-                      (tr (λ (coll) ((λ (v) (ff? v)) ->i coll))
-                          (λ (trace) true))
-                      (λ (x) false)))
+                (mon ctc lib main
+                     (tr (λ (coll) ((λ (v) (ff? v)) ->i (λ (in) coll)))
+                         (λ (trace) true))
+                     (λ (x) false)))
                ())))
 
 ;; ... Above, but the argument is incorrect
 (test-equal
  (eval-ΛT (term ((λ (f) (f true))
                  (mon ctc lib main
-                      (tr (λ (coll) ((λ (v) (ff? v)) ->i coll))
+                      (tr (λ (coll) ((λ (v) (ff? v)) ->i (λ (in) coll)))
                           (λ (trace) true))
                       (λ (x) false)))))
- (term (err ctc main))) ;; main gets blamed
+ (term (err ctc main)))
+;; main gets blamed since it provides an input to `f` that violates the contract
 
 ;; Trace contract that collects function arguments, accepts all traces
 (test-equal
@@ -890,8 +891,8 @@
                       (tr (λ (coll) (coll ->i (λ (in) (λ (out) (ff? out)))))
                           (λ (trace) true))
                       (λ (x) true)))))
- ;; lib gets blamed
  (term (err ctc lib)))
+;; lib gets blamed since it defines `f` in a way that violates the contract
 
 ;; Trace predicate tests =======================================================
 
