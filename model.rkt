@@ -376,10 +376,10 @@
      (mon j k e e) ;; two-label monitor
      (grd j k ω v) ;; guard
      (e · l))      ;; label application
-
   (v ::= .... κ (grd j k ω v))
-  (non-fun ::= .... (v ->i v) (grd j k ω v))  ;; not in paper
+  (non-fun ::= .... (v ->i v) (grd j k ω v))  ;; values that are not functions (not in paper)
   (κ ::= b (λ (x) e) (v ->i v))
+  (non-con ::= α (grd j k ω v))  ;; values that are not contracts (not in paper)
   (ω ::= true (v ->i v))
   (E ::= .... (E ->i e) (v ->i E) (mon j k E e) (mon j k v E) (E · l)))
 
@@ -436,9 +436,9 @@
         (where e_k (e_g · k))
         grd-fun]
 
-   [--> ((in-hole E (mon j k v_κ v)) σ)
+   [--> ((in-hole E (mon j k non-con v)) σ)
         ((in-hole E (err runtime REPL)) σ)
-        (side-condition (not (redex-match? ΛC-eval κ (term v_κ))))
+        ;(side-condition (not (redex-match? ΛC-eval κ (term v_κ))))
         err-mon]))
 
 
@@ -746,6 +746,7 @@
   ;; surface syntax from ΛT and evaluation syntax from ΛC-eval
   ΛT∪ΛC-eval
   (e ::= .... (co α v_p))
+  (non-fun ::= .... (tr v v) (co α v))  ;; (not in paper)
   (κ ::= .... (tr v v) (co α v))
   (E ::= .... (tr E e) (tr v E)))
 
@@ -816,6 +817,19 @@
 ;
 ;
 ;
+
+;; Nick DG's test to match the ΛU test
+;; Trace contract that imposes no constraints on the carrier
+(test-equal
+ (eval-ΛT
+  (term
+   ((mon j k l
+         (tr (λ (coll) (true ->i (λ (x) coll)))
+             (λ (addr) true))
+         (λ (z) z))
+    false)))
+ (term false))
+
 
 ;; Body contract tests =========================================================
 
@@ -982,6 +996,7 @@
 (define-extended-language ΛU-eval
   ΛU∪ΛC-eval
   (e ::= .... (co v α v))
+  (non-fun ::= .... (tr v v v) (co v α v))  ;; (not in paper)
   (κ ::= .... (tr v v v) (co v α v))
   (E ::= .... (tr E e e) (tr v E e) (tr v v E)))
 
@@ -1055,50 +1070,12 @@
 ;
 
 ;; Every collected value must be `false`
-(traces -->ΛU
-        (load-ΛU (term
-                  ((mon ctc serv client
-                        (tr (Λ-bool=? false)
-                            (λ (coll) (true ->i coll))
-                            (λ (x) true))
-                        (λ (y) y))
-                   false))))
-
-(redex-match? ΛU
-              (mon j k l e_1 e_2)
-              (term (mon ctc serv client
-                         (tr (Λ-bool=? false)
-                             (λ (coll) (true ->i coll))
-                             (λ (x) true))
-                         (λ (y) y))))
-
-(redex-match? ΛU
-              e
-              (term (tr (Λ-bool=? false)
-                        (λ (coll) (true ->i coll))
-                        (λ (x) true))))
-
-(redex-match? ΛU
-              (tr e_1 e_2 e_3)
-              (term (tr (Λ-bool=? false)
-                        (λ (coll) (true ->i coll))
-                        (λ (x) true))))
-
-(redex-match? ΛU
-              ((mon j k l e_1 e_2) e_3)
-              (term ((mon ctc serv client
-                          (tr (Λ-bool=? false)
-                              (λ (coll) (true ->i coll))
-                              (λ (x) true))
-                          (λ (y) y))
-                     false)))
-
 (test-equal
  (eval-ΛU
   (term
    ((mon ctc serv client
          (tr (Λ-bool=? false)
-             (λ (coll) (true ->i coll))
+             (λ (coll) (true ->i (λ (x) coll)))
              (λ (x) true))
          (λ (y) y))
     false)))
