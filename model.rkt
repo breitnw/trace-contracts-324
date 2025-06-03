@@ -364,10 +364,12 @@
 
 ;; `(mon j k l e_κ e_c)` is a monitor that attaches contract e_κ to e_c.
 ;; The value of e_c is dubbed the "carrier" of the contract.
-;; j, k, and l are labels that name the parties that agreed to the contract:
-;; j is the contract-defining module,
-;; k is the server module, and
-;; l is the client module.
+;; j, k, and l name the parties that agreed to the contract.
+
+;; monitor labels:
+;; - j :: contract-defining module
+;; - k :: server module
+;; - l :: client module
 
 ;; KEY IDEA: monitors are what Kaylie and Joanna called "obligations"
 
@@ -378,20 +380,15 @@
      (mon j k l e_κ e_c)) ;; three-label monitor
   (j k l ::= x))          ;; label
 
-;; monitor labels:
-;; - j :: contract-defining module
-;; - k :: server module
-;; - l :: client module
-
 (define-union-language ΛC∪Λ-eval ΛC Λ-eval)
 
 (define-extended-language ΛC-eval
   ;; inherit surface syntax from ΛC and evaluation syntax from Λ-eval
   ΛC∪Λ-eval
   (e ::= ....
-     (mon j k e e)        ;; two-label monitor
-     (grd j k ω v)        ;; guard
-     (e · l))             ;; label application
+     (mon j k e e) ;; two-label monitor
+     (grd j k ω v) ;; guard
+     (e · l))      ;; label application
 
   (v ::= .... κ (grd j k ω v))
   (non-fun ::= .... (v ->i v) (grd j k ω v))  ;; not in paper
@@ -987,8 +984,15 @@
 ;                                ;
 ;                               ;;
 
+;; `(tr v_κ v_b v_p)`
+;; v_b and v_p are the same as in ΛT, i.e.:
+;; - v_b :: body contract constructor
+;; - v_p :: trace predicate
+
+;; v_κ pairs each trace variable with a contract that governs collected values.
+
 (define-extended-language ΛU
-  ΛC ;; TODO: should extend ΛC, not Λ
+  ΛC
   (e ::= .... (tr e e e)))
 
 (define-union-language ΛU∪ΛC-eval ΛU ΛC-eval)
@@ -1016,41 +1020,28 @@
 
 (define -->ΛU
   (extend-reduction-relation
-   -->ΛC  ;; TODO: this should be -->ΛC, not -->Λ
+   -->ΛC
    ΛU-eval
-
-   ;; TODO: all the `mon`s should be j k, not k j
    [--> ((in-hole E (mon j k (tr v_κ v_b v_p) v)) σ)
-        ;; TODO: missing the second value in the monitor. The line should instead be
-        ;; `(mon j k (tr v_κ v_b v_p) v)` DONE////
-
-        ((in-hole E (mon j k (v_b (co v_κ α v_p) v))) σ_2)
+        ((in-hole E (mon j k (v_b (co v_κ α v_p)) v)) σ_2)
         (where α (next σ))
         (where σ_2 (extend σ))
-        ;; TODO: the `v_b (co v_κ α v_p)` should be in parentheses
-        ;; TODO: α is undefined when used in the first `in-hole`
-        ;; TODO: the second `in-hole` shouldn't be an `in-hole`; it should be a store
         mon-trace]
-
-   [--> ((in-hole E (mon k j (co v_κ α v_p) v)) σ)
-        ((in-hole E (seqn (where x_j (mon k j v_κ v))
-                          (where x_j (x_v · j))
-                          (add! α x_j (mon k j v_p α) v x_v))) σ)
-        ;; TODO: missing parenthesis before v_p
-        ;; TODO: these operations should be performed in sequence; that's not what's
-        ;; happening here
-
-        ;(where x_j (mon k j v_κ v))  ;; TODO: this should be x_v, not x_j
-        ;(where x_j (x_v · j))
-        mon-col]
-   ))
+   [--> ((in-hole E (mon j k (co v_κ α v_p) v)) σ)
+        ((in-hole E (seqn (add! α e_j)
+                          (mon j k (v_p α) v)
+                          e_v))
+         σ)
+        (where e_v (mon j k v_κ v))
+        (where e_j (e_v · j))
+        mon-col]))
 
 (define (load-ΛU p)
   (cond
     [(redex-match? ΛU e p) (term (,p ()))]
     [else (raise (string-append "load-ΛU: expected a valid program, received: " (~a p)))]))
 
-(define-metafunction ΛU-eval  ;; TODO: this should be ΛU-eval, not ΛT-eval
+(define-metafunction ΛU-eval
   unload-ΛU : ζ -> e
   [(unload-ΛU (v σ)) v]
   [(unload-ΛU ((err j k) σ)) (err j k)])
@@ -1078,7 +1069,55 @@
 ;
 ;
 
-; TODO
+;; Every collected value must be `false`
+(traces -->ΛU
+        (load-ΛU (term
+                  ((mon ctc serv client
+                        (tr (Λ-bool=? false)
+                            (λ (coll) (true ->i coll))
+                            (λ (x) true))
+                        (λ (y) y))
+                   false))))
+
+(redex-match? ΛU
+              (mon j k l e_1 e_2)
+              (term (mon ctc serv client
+                         (tr (Λ-bool=? false)
+                             (λ (coll) (true ->i coll))
+                             (λ (x) true))
+                         (λ (y) y))))
+
+(redex-match? ΛU
+              e
+              (term (tr (Λ-bool=? false)
+                        (λ (coll) (true ->i coll))
+                        (λ (x) true))))
+
+(redex-match? ΛU
+              (tr e_1 e_2 e_3)
+              (term (tr (Λ-bool=? false)
+                        (λ (coll) (true ->i coll))
+                        (λ (x) true))))
+
+(redex-match? ΛU
+              ((mon j k l e_1 e_2) e_3)
+              (term ((mon ctc serv client
+                          (tr (Λ-bool=? false)
+                              (λ (coll) (true ->i coll))
+                              (λ (x) true))
+                          (λ (y) y))
+                     false)))
+
+(test-equal
+ (eval-ΛU
+  (term
+   ((mon ctc serv client
+         (tr (Λ-bool=? false)
+             (λ (coll) (true ->i coll))
+             (λ (x) true))
+         (λ (y) y))
+    false)))
+ (term false))
 
 
 ;; =============================================================================
