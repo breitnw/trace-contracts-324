@@ -530,6 +530,7 @@
                     (head (add! (add! (add! (queue) (λ (x) x)) (λ (x) false)) false)))))
  (term (λ (x) x)))
 
+
 ;; ===================
 
 ;; TODO: Something that's a value in ΛC but not in Λ
@@ -537,7 +538,7 @@
 
 
 
-;; Booleans as contracts (p. 15) ===============================================
+;; Booleans as contracts =======================================================
 (test-equal
  (eval-ΛC (term (mon j k l
                      true
@@ -574,6 +575,7 @@
                      false
                      (λ (x) x))))
  (term (err ctc lib)))
+
 
 ;; Functions as contracts ======================================================
 ;; (mon j k l (λ (x) e) v)
@@ -629,10 +631,6 @@
 
 ;; Arrow contracts =============================================================
 
-;; E.g. program 4.1 from paper (p. 15)
-;; TODO: need to add concept of equality to our language to make this work
-;(mon ctc lib main (true ->i (λ (x) (λ (y) x == y))) (λ (z) z))
-
 ;; =======================
 ;; |  Identity function  |
 ;; =======================
@@ -651,7 +649,6 @@
                       (λ (z) z))
                  true)))
  (term true))
-
 
 ;; This new function doesn't satisfy the contract for the identity function.
 ;; Contract blames the server module because it defined the function in a way that
@@ -680,41 +677,19 @@
                  false)))
  (term false))
 
-;; Blames the client module because it passed in the wrong thing (`true`)
 (test-equal
  (eval-ΛC (term ((mon ctc serv client
                       ((λ (v) (ff? v)) ->i (λ (in) true))
                       (λ (x) x))
                  true)))
  (term (err ctc client)))
+;; Blames the client module because it passed in the wrong thing (`true`)
 
 
 ;; TODO: more arrow contracts
 
 
 ;; Effects aren't duplicated ===================================================
-
-;; example that shows that effects aren't duplicated
-;;   (maybe we just state that this is true; otherwise, we have to add effects to our language)
-;;   could we use `add!` as our effect? idk how to check that `add!` is only called once though
-#;
-(first
- (apply-reduction-relation*
-  -->ΛC
-  (load-ΛC (term ((mon j k l
-                       true
-                       (λ (x) x))
-                  false)))))
-#;
-(traces -->ΛC
-        (load-ΛC (term ((mon j k l
-                             ((λ (in) (seqn (add! (queue) in)
-                                            true))
-                              ->i
-                              (λ (x) true))
-                             (λ (x) x))
-                        true))))
-
 (test-equal
  (first
   (apply-reduction-relation*
@@ -729,14 +704,11 @@
  '(true ((1 null) (0 (cons true 1)))))
 
 
-;; example where contract itself is inconsistent, e.g.
-;;   `(bool? -> bool?) ->i (λ (f) (f 42))` from paper, p. 16
+;; Contract itself is inconsistent =============================================
+;; e.g. `(bool? -> bool?) ->i (λ (f) (f 42))` from paper, p. 16
 
 ;; TODO
 
-
-;; `(mon j k v_κ v)` where v_κ is not a contract (should error)
-;; i.e. attempting to attach something that's not a contract to an expression
 
 ;; Attempting to attach an address (rather than a contract) to an expression ===
 (test-equal
@@ -757,7 +729,11 @@
 
 ;; TODO: attempting to attach other things that aren't addresses or contracts?
 
-;; Contracts for higher-order functions (multiple arrows)
+
+;; Higher-order function contracts =============================================
+;; (multiple arrows)
+
+;; TODO
 
 
 ;; =============================================================================
@@ -866,7 +842,7 @@
 ;
 ;
 
-;; Nick DG's test to match the ΛU test
+;; Test to match the ΛU test
 ;; Trace contract that imposes no constraints on the carrier
 (test-equal
  (eval-ΛT
@@ -1004,25 +980,6 @@
                           (λ (q) (alternating? q)))
                       (λ (x) true)))))
  (term true))
-
-;; added by me
-(test-equal
- (eval-ΛT (term ((λ (f) (seqn (f true)))
-                 (mon ctc lib main
-                      (tr (λ (coll) (coll ->i (λ (in) true)))
-                          (λ (q) (alternating? q)))
-                      (λ (x) true)))))
- (term true))
-#;
-(traces -->ΛT
-        (term (((λ (f) (seqn (f true)))
-                (mon ctc lib main
-                     (tr (λ (coll) (coll ->i (λ (in) true)))
-                         (λ (q) (alternating? q)))
-                     (λ (x) true)))
-               ())))
-
-;; end of section added by me
 
 ;; ... Above, but trace violates predicate
 (test-equal
@@ -1202,33 +1159,6 @@
  (term (err ctc client)))
 ;; Client module is blamed since it provides the input (false) that violates
 ;; the trace variable contract
-
-
-;; every collected value must be 'natural'
-;; first is meant to pass, second meant to fail
-#;
-(test-equal
- (eval-ΛU
-  (term
-   ((mon ctc serv client
-         (tr (λ (x) (natural? x))
-             (λ (coll) (cons x coll))
-             (λ (x) true))
-         (λ (y) y))
-    4)))
- (term true))
-
-#;
-(test-equal
- (eval-ΛU
-  (term
-   ((mon ctc serv client
-         (tr (λ (x) (natural? x))
-             (λ (coll) (cons x coll))
-             (λ (x) true))
-         (λ (y) y))
-    -4)))
- (term false))
 
 
 ;; =============================================================================
