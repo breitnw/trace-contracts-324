@@ -25,10 +25,10 @@
 
 
 (define-language Λ
-  (e ::= b x f (o e) (if e e e) (e e) (queue) (add! e e) (seqn e e ...))
+  (e ::= b x f (o e ...) (if e e e) (e e) (queue) (add! e e) (seqn e e ...))
   (b ::= true false)
   (f ::= (λ (x) e))
-  (o ::= null? head tail)
+  (o ::= null? head tail consistent? alternating? ==? tt? ff?)
   (x y z ::= variable-not-otherwise-mentioned)
   #:binding-forms
   (λ (x) e #:refers-to x))
@@ -40,7 +40,7 @@
   (e ::= .... α (err j k))
   (v ::= b f α)
   (non-fun ::= b α)  ;; not in paper; added to simplify err-app case
-  (E ::= hole (o E) (if E e e) (E e) (v E) (add! E e) (add! v E) (seqn v ... E e ...))
+  (E ::= hole (o v ... E e ...) (if E e e) (E e) (v E) (add! E e) (add! v E) (seqn v ... E e ...))
   (u ::= null (cons v α))  ;; store values
   (σ ::= ((α u) ...))  ;; store
   (α ::= natural)
@@ -76,7 +76,7 @@
   (if b (term true) (term false)))
 
 (define-metafunction Λ-eval
-  delta : o v σ -> e
+  delta : o v ... σ -> e
   ;; null?
   [(delta null? α ((α_1 u_1) ... (α null) (α_2 u_2) ...))
    true]
@@ -95,10 +95,11 @@
   [(delta tail α ((α_1 u_1) ... (α (cons v α_3)) (α_2 u_2) ...))
    α_3]
 
-  ;; CONVENIENCE: we have added several delta operations not included in the
+  ;; CONVENIENCE: we have added several queue operations not included in the
   ;; paper, namely the `consistent?` and `alternating?` predicates. This is
   ;; for the sake of legibility, since traces quickly become a mess when using
   ;; the Y-combinator.
+
   [(delta consistent? α ((α_1 u_1) ... (α null) (α_2 u_2) ...))
    true]
 
@@ -129,8 +130,20 @@
    (where ((_ _) ... (α   (cons v_1 α_t)) (_ _) ...) σ)
    (where ((_ _) ... (α_t (cons v_2 _))   (_ _) ...) σ)]
 
-  ;; v ∉ Addr
-  [(delta o v σ)
+  ;; CONVENIENCE: we also added several boolean operations to maximize
+  ;; trace legibility: tt?, ff?, and ==?
+
+  [(delta tt? true σ) true]
+  [(delta tt? false σ) false]
+
+  [(delta ff? false σ) true]
+  [(delta ff? true σ) false]
+
+  [(delta ==? v v σ) true]
+  [(delta ==? v_1 v_2 σ) false]
+
+  ;; in any other case, throw an error
+  [(delta o v ... σ)
    (err runtime REPL)])
 
 (define-metafunction Λ-eval
@@ -183,8 +196,8 @@
         Λβ]
 
    ;; delta
-   [--> ((in-hole E (o v)) σ)
-        ((in-hole E (delta o v σ)) σ)
+   [--> ((in-hole E (o v ...)) σ)
+        ((in-hole E (delta o v ... σ)) σ)
         Λδ]
 
    ;; sequenced operations
@@ -559,10 +572,6 @@
 ;; Functions as contracts ======================================================
 ;; (mon j k l (λ (x) e) v)
 
-;; Helper terms
-(define-term Λ-not (λ (x) (if x false true)))
-(define-term Λ-bool=? (λ (x) (λ (y) (if x y (Λ-not y)))))
-
 ;; ====================
 ;; |  Flat contracts  |
 ;; ====================
@@ -581,13 +590,13 @@
 
 (test-equal
  (eval-ΛC (term (mon j k l
-                     (Λ-bool=? true)
+                     (λ (v) (tt? v))
                      false)))
  (term (err j k)))
 
 (test-equal
  (eval-ΛC (term (mon j k l
-                     (Λ-bool=? false)
+                     (λ (v) (ff? v))
                      false)))
  (term false))
 
@@ -626,13 +635,13 @@
 ;; primitive operations at our disposal.
 (test-equal
  (eval-ΛC (term ((mon j k l
-                      (true ->i Λ-bool=?)
+                      (true ->i (λ (in) (λ (out) (==? in out))))
                       (λ (z) z))
                  false)))
  (term false))
 (test-equal
  (eval-ΛC (term ((mon j k l
-                      (true ->i Λ-bool=?)
+                      (true ->i (λ (in) (λ (out) (==? in out))))
                       (λ (z) z))
                  true)))
  (term true))
@@ -643,14 +652,14 @@
 ;; doesn't satisfy the contract.
 (test-equal
  (eval-ΛC (term ((mon ctc serv client
-                      (true ->i Λ-bool=?)
-                      (λ (z) (Λ-not z)))
+                      (true ->i (λ (in) (λ (out) (==? in out))))
+                      (λ (z) (ff? z)))
                  true)))
  (term (err ctc serv)))
 (test-equal
  (eval-ΛC (term ((mon ctc serv client
-                      (true ->i Λ-bool=?)
-                      (λ (z) (Λ-not z)))
+                      (true ->i (λ (in) (λ (out) (==? in out))))
+                      (λ (z) (ff? z)))
                  false)))
  (term (err ctc serv)))
 
@@ -660,7 +669,7 @@
 ;; =======================================================
 (test-equal
  (eval-ΛC (term ((mon j k l
-                      ((Λ-bool=? false) ->i (λ (x) true))
+                      ((λ (v) (ff? v)) ->i (λ (in) true))
                       (λ (x) x))
                  false)))
  (term false))
@@ -668,7 +677,7 @@
 ;; Blames the client module because it passed in the wrong thing (`true`)
 (test-equal
  (eval-ΛC (term ((mon ctc serv client
-                      ((Λ-bool=? false) ->i (λ (x) true))
+                      ((λ (v) (ff? v)) ->i (λ (in) true))
                       (λ (x) x))
                  true)))
  (term (err ctc client)))
@@ -775,7 +784,7 @@
   (extend-reduction-relation
    -->ΛC
    ΛT-eval
-   
+
    [--> ((in-hole E (mon j k (tr v_b v_p) v)) σ)
         ((in-hole E (mon j k (v_b (co α v_p)) v)) σ_1)
         (where α (next σ))
@@ -830,37 +839,46 @@
 ;; Trace contract that collects function results, accepts all traces
 (test-equal
  (eval-ΛT (term ((λ (f) (f false))
-                 ((mon ctc lib main
-                       (tr (λ (coll) ((Λ-bool=? false) ->i coll))
-                           (λ (trace) true)))
-                  (λ (x) false)))))
+                 (mon ctc lib main
+                      (tr (λ (coll) ((λ (v) (ff? v)) ->i coll))
+                          (λ (trace) true))
+                      (λ (x) false)))))
  (term false))
+
+#;
+(traces -->ΛT
+        (term (((λ (f) (f false))
+                 (mon ctc lib main
+                      (tr (λ (coll) ((λ (v) (ff? v)) ->i coll))
+                          (λ (trace) true))
+                      (λ (x) false)))
+               ())))
 
 ;; ... Above, but the argument is incorrect
 (test-equal
  (eval-ΛT (term ((λ (f) (f true))
-                 ((mon ctc lib main
-                       (tr (λ (coll) (Λ-bool=? false))
-                           (λ (trace) true)))
-                  (λ (x) false)))))
+                 (mon ctc lib main
+                      (tr (λ (coll) ((λ (v) (ff? v)) ->i coll))
+                          (λ (trace) true))
+                      (λ (x) false)))))
  (term (err ctc main))) ;; main gets blamed
 
 ;; Trace contract that collects function arguments, accepts all traces
 (test-equal
  (eval-ΛT (term ((λ (f) (f false))
-                 ((mon ctc lib main
-                       (tr (λ (coll) (coll ->i (Λ-bool=? false)))
-                           (λ (trace) true)))
-                  (λ (x) false)))))
+                 (mon ctc lib main
+                      (tr (λ (coll) (coll ->i (λ (in) (λ (out) (ff? out)))))
+                          (λ (trace) true))
+                      (λ (x) false)))))
  (term false))
 
 ;; ... Above, but function is incorrect
 (test-equal
  (eval-ΛT (term ((λ (f) (f false))
-                 ((mon ctc lib main
-                       (tr (λ (coll) (coll ->i (Λ-bool=? false)))
-                           (λ (trace) true)))
-                  (λ (x) true)))))
+                 (mon ctc lib main
+                      (tr (λ (coll) (coll ->i (λ (in) (λ (out) (ff? out)))))
+                          (λ (trace) true))
+                      (λ (x) true)))))
  ;; lib gets blamed
  (term (err ctc lib)))
 
@@ -869,20 +887,20 @@
 ;; Trace contract that rejects all traces, blaming main
 (test-equal
  (eval-ΛT (term ((λ (f) (f false))
-                 ((mon ctc lib main
-                       (tr (λ (coll) (coll ->i true))
-                           (λ (trace) false))) ;; pred returns false
-                  (λ (x) true)))))
+                 (mon ctc lib main
+                      (tr (λ (coll) (coll ->i (λ (in) true)))
+                          (λ (trace) false)) ;; pred returns false
+                      (λ (x) true)))))
  ;; main gets blamed, since it produced the collected value
  (term (err ctc main)))
 
 ;; Trace contract that rejects all traces, blaming lib
 (test-equal
  (eval-ΛT (term ((λ (f) (f false))
-                 ((mon ctc lib main
-                       (tr (λ (coll) (true ->i coll))
-                           (λ (trace) false))) ;; pred returns false
-                  (λ (x) true)))))
+                 (mon ctc lib main
+                      (tr (λ (coll) (true ->i coll))
+                          (λ (trace) false)) ;; pred returns false
+                      (λ (x) true)))))
 
  ;; lib gets blamed, since it produced the collected value
  (term (err ctc lib)))
@@ -893,10 +911,10 @@
                               (f true)
                               (f true)
                               (f true)))
-                 ((mon ctc lib main
-                       (tr (λ (coll) (true ->i coll))
-                           Λ-consistent?))
-                  (λ (x) x)))))
+                 (mon ctc lib main
+                      (tr (λ (coll) (true ->i coll))
+                          (λ (q) (Λ-consistent? q)))
+                      (λ (x) x)))))
  true)
 
 ;; ... Above, trying all false return values
@@ -905,10 +923,10 @@
                               (f false)
                               (f false)
                               (f false)))
-                 ((mon ctc lib main
-                       (tr (λ (coll) (true ->i coll))
-                           Λ-consistent?))
-                  (λ (x) x)))))
+                 (mon ctc lib main
+                      (tr (λ (coll) (true ->i coll))
+                          (λ (q) (Λ-consistent? q)))
+                      (λ (x) x)))))
  true)
 
 ;; ... Above, but trace violates predicate
@@ -917,10 +935,10 @@
                               (f false)
                               (f true)
                               (f false)))
-                 ((mon ctc lib main
-                       (tr (λ (coll) (true ->i coll))
-                           Λ-consistent?))
-                  (λ (x) x)))))
+                 (mon ctc lib main
+                      (tr (λ (coll) (true ->i coll))
+                          (λ (q) (Λ-consistent? q)))
+                      (λ (x) x)))))
  ;; lib gets blamed, since it promised identical return values
  (term (err ctc lib)))
 
@@ -930,10 +948,10 @@
                               (f false)
                               (f true)
                               (f false)))
-                 ((mon ctc lib main
-                       (tr (λ (coll) (coll ->i true))
-                           Λ-alternating?))
-                  (λ (x) true)))))
+                 (mon ctc lib main
+                      (tr (λ (coll) (coll ->i (λ (in) true)))
+                          (λ (q) (Λ-alternating? q)))
+                      (λ (x) true)))))
  true)
 
 ;; ... Above, but trace violates predicate
@@ -942,10 +960,10 @@
                               (f false)
                               (f false)
                               (f true)))
-                 ((mon ctc lib main
-                       (tr (λ (coll) (coll ->i true))
-                           Λ-alternating?))
-                  (λ (x) true)))))
+                 (mon ctc lib main
+                      (tr (λ (coll) (coll ->i (λ (in) true)))
+                          (λ (q) (Λ-alternating? q)))
+                      (λ (x) true)))))
  ;; main gets blamed, since it produced the collected value
  (term (err ctc main)))
 
@@ -1005,7 +1023,7 @@
    [--> ((in-hole E (mon j k (tr v_κ v_b v_p) v)) σ)
         ;; TODO: missing the second value in the monitor. The line should instead be
         ;; `(mon j k (tr v_κ v_b v_p) v)` DONE////
-        
+
         ((in-hole E (mon j k (v_b (co v_κ α v_p) v))) σ_2)
         (where α (next σ))
         (where σ_2 (extend σ))
@@ -1013,15 +1031,15 @@
         ;; TODO: α is undefined when used in the first `in-hole`
         ;; TODO: the second `in-hole` shouldn't be an `in-hole`; it should be a store
         mon-trace]
-   
+
    [--> ((in-hole E (mon k j (co v_κ α v_p) v)) σ)
-        ((in-hole E (seqn (where x_j (mon k j v_κ v))  
+        ((in-hole E (seqn (where x_j (mon k j v_κ v))
                           (where x_j (x_v · j))
                           (add! α x_j (mon k j v_p α) v x_v))) σ)
         ;; TODO: missing parenthesis before v_p
         ;; TODO: these operations should be performed in sequence; that's not what's
         ;; happening here
-        
+
         ;(where x_j (mon k j v_κ v))  ;; TODO: this should be x_v, not x_j
         ;(where x_j (x_v · j))
         mon-col]
