@@ -910,7 +910,7 @@
 (test-equal
  (eval-ΛT (term ((λ (f) (f false))
                  (mon ctc lib main
-                      (tr (λ (coll) (true ->i coll))
+                      (tr (λ (coll) (true ->i (λ (in) coll)))
                           (λ (trace) false)) ;; pred returns false
                       (λ (x) true)))))
 
@@ -924,7 +924,7 @@
                               (f true)
                               (f true)))
                  (mon ctc lib main
-                      (tr (λ (coll) (true ->i coll))
+                      (tr (λ (coll) (true ->i (λ (in) coll)))
                           (λ (q) (Λ-consistent? q)))
                       (λ (x) x)))))
  true)
@@ -936,7 +936,7 @@
                               (f false)
                               (f false)))
                  (mon ctc lib main
-                      (tr (λ (coll) (true ->i coll))
+                      (tr (λ (coll) (true ->i (λ (in) coll)))
                           (λ (q) (Λ-consistent? q)))
                       (λ (x) x)))))
  true)
@@ -948,7 +948,7 @@
                               (f true)
                               (f false)))
                  (mon ctc lib main
-                      (tr (λ (coll) (true ->i coll))
+                      (tr (λ (coll) (true ->i (λ (in) coll)))
                           (λ (q) (Λ-consistent? q)))
                       (λ (x) x)))))
  ;; lib gets blamed, since it promised identical return values
