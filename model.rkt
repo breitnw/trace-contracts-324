@@ -1097,6 +1097,32 @@
  (term false))
 
 
+;; every collected value must be 'natural'
+;; first is meant to pass, second meant to fail
+(test-equal
+ (eval-ΛU
+  (term
+   ((mon ctc serv client
+         (tr (λ (x) (natural? x))
+             (λ (coll) (cons x coll))
+             (λ (x) true))
+         (λ (y) y))
+    4)))
+ (term true))
+
+
+(test-equal
+ (eval-ΛU
+  (term
+   ((mon ctc serv client
+         (tr (λ (x) (natural? x))
+             (λ (coll) (cons x coll))
+             (λ (x) true))
+         (λ (y) y))
+    -4)))
+ (term false))
+
+
 ;; =============================================================================
 ;;                              SECTION 5 : TRACES
 ;; =============================================================================
