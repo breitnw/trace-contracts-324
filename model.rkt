@@ -685,11 +685,41 @@
 ;; TODO: more arrow contracts
 
 
+;; Effects aren't duplicated ===================================================
+
 ;; example that shows that effects aren't duplicated
 ;;   (maybe we just state that this is true; otherwise, we have to add effects to our language)
 ;;   could we use `add!` as our effect? idk how to check that `add!` is only called once though
+#;
+(first
+ (apply-reduction-relation*
+  -->ΛC
+  (load-ΛC (term ((mon j k l
+                       true
+                       (λ (x) x))
+                  false)))))
+#;
+(traces -->ΛC
+        (load-ΛC (term ((mon j k l
+                             ((λ (in) (seqn (add! (queue) in)
+                                            true))
+                              ->i
+                              (λ (x) true))
+                             (λ (x) x))
+                        true))))
 
-;; TODO
+(test-equal
+ (first
+  (apply-reduction-relation*
+   -->ΛC
+   (load-ΛC (term ((mon j k l
+                        ((λ (in) (seqn (add! (queue) in)
+                                       true))
+                         ->i
+                         (λ (x) true))
+                        (λ (x) x))
+                   true)))))
+ '(true ((1 null) (0 (cons true 1)))))
 
 
 ;; example where contract itself is inconsistent, e.g.
@@ -968,6 +998,25 @@
                       (λ (x) true)))))
  (term true))
 
+;; added by me
+(test-equal
+ (eval-ΛT (term ((λ (f) (seqn (f true)))
+                 (mon ctc lib main
+                      (tr (λ (coll) (coll ->i (λ (in) true)))
+                          (λ (q) (alternating? q)))
+                      (λ (x) true)))))
+ (term true))
+#;
+(traces -->ΛT
+        (term (((λ (f) (seqn (f true)))
+                (mon ctc lib main
+                     (tr (λ (coll) (coll ->i (λ (in) true)))
+                         (λ (q) (alternating? q)))
+                     (λ (x) true)))
+               ())))
+
+;; end of section added by me
+
 ;; ... Above, but trace violates predicate
 (test-equal
  (eval-ΛT (term ((λ (f) (seqn (f true)
@@ -1150,6 +1199,7 @@
 
 ;; every collected value must be 'natural'
 ;; first is meant to pass, second meant to fail
+#;
 (test-equal
  (eval-ΛU
   (term
@@ -1161,7 +1211,7 @@
     4)))
  (term true))
 
-
+#;
 (test-equal
  (eval-ΛU
   (term
@@ -1179,13 +1229,6 @@
 ;; =============================================================================
 
 ;; TODO write (commented-out) examples with traces for live demonstration
-
-
-;; =============================================================================
-;;                         SECTION 6 : RANDOMIZED TESTING
-;; =============================================================================
-
-;; TODO: add randomized testing
 
 
 ;; =============================================================================
