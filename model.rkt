@@ -898,8 +898,12 @@
                       (λ (x) false)))))
  (term false))
 
+;; ===================
+;; |  OPTIONAL DEMO  |
+;; ===================
 #;
 (traces -->ΛT
+        #:x-spacing 100
         (term (((λ (f) (f false))
                 (mon ctc lib main
                      (tr (λ (coll) ((λ (v) (ff? v)) ->i (λ (in) coll)))
@@ -948,6 +952,18 @@
  ;; main gets blamed, since it produced the collected value
  (term (err ctc main)))
 
+;; ============
+;; |  DEMO 1  |
+;; ============
+#;
+(traces -->ΛT
+        #:x-spacing 100
+        (load-ΛT (term ((λ (f) (f false))
+                        (mon ctc lib main
+                             (tr (λ (coll) (coll ->i (λ (in) true)))
+                                 (λ (trace) false)) ;; pred returns false
+                             (λ (x) true))))))
+
 ;; Trace contract that rejects all traces, blaming lib
 (test-equal
  (eval-ΛT (term ((λ (f) (f false))
@@ -958,6 +974,18 @@
 
  ;; lib gets blamed, since it produced the collected value
  (term (err ctc lib)))
+
+;; ============
+;; |  DEMO 2  |
+;; ============
+#;
+(traces -->ΛT
+        #:x-spacing 100
+        (load-ΛT (term ((λ (f) (f false))
+                        (mon ctc lib main
+                             (tr (λ (coll) (true ->i (λ (in) coll)))
+                                 (λ (trace) false)) ;; pred returns false
+                             (λ (x) true))))))
 
 ;; Function that produces the same value every time (server blame ex.)
 (test-equal
@@ -996,6 +1024,21 @@
  ;; lib gets blamed, since it promised identical return values
  (term (err ctc lib)))
 
+;; ============
+;; |  DEMO 3  |
+;; ============
+#;
+(traces -->ΛT
+        #:x-spacing 100
+        (load-ΛT (term ((λ (f) (seqn (f false)
+                                     (f false)
+                                     (f true)
+                                     (f false)))
+                        (mon ctc lib main
+                             (tr (λ (coll) (true ->i (λ (in) coll)))
+                                 (λ (q) (consistent? q)))
+                             (λ (x) x))))))
+
 ;; Function that accepts an alternating stream (client blame ex.)
 (test-equal
  (eval-ΛT (term ((λ (f) (seqn (f true)
@@ -1020,6 +1063,21 @@
                       (λ (x) true)))))
  ;; main gets blamed, since it produced the collected value
  (term (err ctc main)))
+
+;; ============
+;; |  DEMO 4  |
+;; ============
+#;
+(traces -->ΛT
+        #:x-spacing 100
+        (load-ΛT (term ((λ (f) (seqn (f true)
+                                     (f false)
+                                     (f false)
+                                     (f true)))
+                        (mon ctc lib main
+                             (tr (λ (coll) (coll ->i (λ (in) true)))
+                                 (λ (q) (alternating? q)))
+                             (λ (x) true))))))
 
 
 ;; =============================================================================
@@ -1080,13 +1138,13 @@
   (extend-reduction-relation
    -->ΛC
    ΛU-eval
-   
+
    [--> ((in-hole E (mon j k (tr v_κ v_b v_p) v)) σ)
         ((in-hole E (mon j k (v_b (co v_κ α v_p)) v)) σ_2)
         (where α (next σ))
         (where σ_2 (extend σ))
         mon-trace]
-   
+
    [--> ((in-hole E (mon j k (co v_κ α v_p) v)) σ)
         ((in-hole E (seqn (add! α e_j)
                           (mon j k (v_p α) v)
@@ -1143,6 +1201,20 @@
     false)))
  (term false))
 
+;; ============
+;; |  DEMO 5  |
+;; ============
+#;
+(traces -->ΛU
+        #:x-spacing 100
+        (load-ΛU (term
+                  ((mon ctc serv client
+                        (tr (λ (tr-var) (ff? tr-var))
+                            (λ (coll) (true ->i (λ (in) coll)))
+                            (λ (addr) true))
+                        (λ (y) y))
+                   false))))
+
 ;; ... Same as above, but with input that makes the contract fail
 
 ;; Note that the input itself is not the problem, but rather the function was
@@ -1161,6 +1233,20 @@
 ;; Server module gets blamed since the server provided the function `(λ (x) true)`
 ;; that violates the contract
 
+;; ============
+;; |  DEMO 6  |
+;; ============
+#;
+(traces -->ΛU
+        #:x-spacing 100
+        (load-ΛU (term
+                  ((mon ctc serv client
+                        (tr (λ (tr-var) (ff? tr-var))
+                            (λ (coll) (true ->i (λ (in) coll)))
+                            (λ (addr) true))
+                        (λ (y) y))
+                   true))))
+
 ;; Input is collected
 (test-equal
  (eval-ΛU
@@ -1172,6 +1258,20 @@
          (λ (y) y))
     true)))
  (term true))
+
+;; ============
+;; |  DEMO 7  |
+;; ============
+#;
+(traces -->ΛU
+        #:x-spacing 100
+        (load-ΛU (term
+                  ((mon ctc serv client
+                        (tr (λ (tr-var) (tt? tr-var))
+                            (λ (coll) (coll ->i (λ (in) true)))
+                            (λ (addr) true))
+                        (λ (y) y))
+                   true))))
 
 ;; ... Same as above, but with input that violates the contract
 (test-equal
@@ -1187,12 +1287,19 @@
 ;; Client module is blamed since it provides the input (false) that violates
 ;; the trace variable contract
 
-
-;; =============================================================================
-;;                              SECTION 5 : TRACES
-;; =============================================================================
-
-;; TODO write (commented-out) examples with traces for live demonstration
+;; ============
+;; |  DEMO 8  |
+;; ============
+#;
+(traces -->ΛU
+        #:x-spacing 100
+        (load-ΛU (term
+                  ((mon ctc serv client
+                        (tr (λ (tr-var) (tt? tr-var))
+                            (λ (coll) (coll ->i (λ (in) true)))
+                            (λ (addr) true))
+                        (λ (y) y))
+                   false))))
 
 
 ;; =============================================================================
@@ -1549,4 +1656,3 @@
 (test-match Λ-eval
             (err runtime REPL)
             (term (delta tail (λ (x) 0) ((0 null) (1 (cons (λ (x) true) 2)) (2 null)))))
-
