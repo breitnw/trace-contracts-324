@@ -443,10 +443,17 @@
         grd-true]
 
    [--> ((in-hole E ((grd j k (v_d ->i v_c) v) · l)) σ)
-        ((in-hole E (λ (x) (mon j k l (v_c e_j) (v e_k)))) σ)
-        (where e_g (mon j l v_d x))
-        (where e_j (e_g · j))
-        (where e_k (e_g · k))
+        ((in-hole E (λ (x)
+                      ((λ (x_g)
+                        ((λ (x_j)
+                           ((λ (x_k) (mon j k l (v_c x_j) (v x_k)))
+                            (x_g · k)))   ;; let x_k = (x_g · k)
+                         (x_g · j)))      ;; let x_j = (x_g · j)
+                      (mon j l v_d x))))  ;; let x_g = (mon j l v_d x)
+         σ)
+        ;; we can't use "where", since it does not evaluate arguments before
+        ;; substituting. Instead, since the language does not have
+        ;; "let"-bindings, we use function application
         grd-fun]
 
    [--> ((in-hole E (mon j k non-con v)) σ)
