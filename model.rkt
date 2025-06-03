@@ -47,8 +47,8 @@
   (j k l ::= x))
 
 ;; `(err j k)` denotes an error with two labels:
-;; j names the party that specified the violated contract, and
-;; k names the party that violated the contract
+;; - j :: party that specified the violated contract
+;; - k :: party that violated the contract
 
 
 ;
@@ -225,8 +225,6 @@
         ((in-hole E α) (add σ α v))
         add!]
 
-   ;; TODO/question: will hardcoding `(err runtime REPL)` cause issues when we
-   ;; get to a language that can have more nuanced errors?
    [--> ((in-hole E (non-fun v)) σ)
         ((in-hole E (err runtime REPL)) σ)
         ;; rule only fires if `v_f` is not a function
@@ -251,7 +249,8 @@
 (define (load-Λ p)
   (cond
     [(redex-match? Λ e p) (term (,p ()))]
-    [else (raise (string-append "load-Λ: expected a valid program, received: " (~a p)))]))
+    [else (raise (string-append "load-Λ: expected a valid program, received: "
+                                (~a p)))]))
 
 (define-metafunction Λ-eval
   unload-Λ : ζ -> e
@@ -494,7 +493,8 @@
 (define (load-ΛC p)
   (cond
     [(redex-match? ΛC e p) (term (,p ()))]
-    [else (raise (string-append "load-ΛC: expected a valid program, received: " (~a p)))]))
+    [else (raise (string-append "load-ΛC: expected a valid program, received: "
+                                (~a p)))]))
 
 (define-metafunction ΛC-eval
   unload-ΛC : ζ -> e
@@ -562,7 +562,6 @@
 
 ;; TODO: Something that's a value in ΛC but not in Λ
 ;(term (grd j k true false)
-
 
 
 ;; Booleans as contracts =======================================================
@@ -653,7 +652,7 @@
 ;; =========================
 ;; i.e. the function used as the contract returns a function contract
 
-;; TODO
+;; TODO (if time)
 
 
 ;; Arrow contracts =============================================================
@@ -713,7 +712,7 @@
 ;; Blames the client module because it passed in the wrong thing (`true`)
 
 
-;; TODO: more arrow contracts
+;; TODO (if time): more arrow contracts
 
 
 ;; Effects aren't duplicated ===================================================
@@ -734,7 +733,7 @@
 ;; Contract itself is inconsistent =============================================
 ;; e.g. `(bool? -> bool?) ->i (λ (f) (f 42))` from paper, p. 16
 
-;; TODO
+;; TODO (if time)
 
 
 ;; Attempting to attach an address (rather than a contract) to an expression ===
@@ -754,13 +753,13 @@
  (eval-ΛC (term (mon j k l (if false true (queue)) (λ (x) x))))
  (term (err runtime REPL)))
 
-;; TODO: attempting to attach other things that aren't addresses or contracts?
+;; TODO (if time): attempting to attach other things that aren't addresses or contracts?
 
 
 ;; Higher-order function contracts =============================================
 ;; (multiple arrows)
 
-;; TODO
+;; TODO (if time)
 
 
 ;; =============================================================================
@@ -839,7 +838,8 @@
 (define (load-ΛT p)
   (cond
     [(redex-match? ΛT e p) (term (,p ()))]
-    [else (raise (string-append "load-ΛT: expected a valid program, received: " (~a p)))]))
+    [else (raise (string-append "load-ΛT: expected a valid program, received: "
+                                (~a p)))]))
 
 (define-metafunction ΛT-eval
   unload-ΛT : ζ -> e
@@ -1145,6 +1145,8 @@
         (where σ_2 (extend σ))
         mon-trace]
 
+   ;; TODO: this should also switch to using functions as to avoid effect duplication
+   ;; (see lambda C for similar case)
    [--> ((in-hole E (mon j k (co v_κ α v_p) v)) σ)
         ((in-hole E (seqn (add! α e_j)
                           (mon j k (v_p α) v)
@@ -1158,7 +1160,8 @@
 (define (load-ΛU p)
   (cond
     [(redex-match? ΛU e p) (term (,p ()))]
-    [else (raise (string-append "load-ΛU: expected a valid program, received: " (~a p)))]))
+    [else (raise (string-append "load-ΛU: expected a valid program, received: "
+                                (~a p)))]))
 
 (define-metafunction ΛU-eval
   unload-ΛU : ζ -> e
