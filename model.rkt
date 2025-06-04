@@ -1145,15 +1145,18 @@
         (where σ_2 (extend σ))
         mon-trace]
 
-   ;; TODO: this should also switch to using functions as to avoid effect duplication
-   ;; (see lambda C for similar case)
    [--> ((in-hole E (mon j k (co v_κ α v_p) v)) σ)
-        ((in-hole E (seqn (add! α e_j)
-                          (mon j k (v_p α) v)
-                          e_v))
+        ((in-hole E ((λ (e_v)
+                       ((λ (e_j)
+                          (seqn (add! α e_j)
+                                (mon j k (v_p α) v)
+                                e_v))
+                        (e_v · j)))    ;; e_j = e_v · j
+                     (mon j k v_κ v))) ;; e_v = (mon j k v_κ v)
          σ)
-        (where e_v (mon j k v_κ v))
-        (where e_j (e_v · j))
+        ;; Similarly to ΛC's grd-fun reduction step, we can't use `where` since
+        ;; it doesn't evaluate arguments before substituting, so using `where`
+        ;; would duplicate any effects caused by `e_v`
         mon-col]))
 
 
@@ -1303,6 +1306,31 @@
                             (λ (addr) true))
                         (λ (y) y))
                    false))))
+
+;; Effects aren't duplicated ===================================================
+(test-equal
+ (eval-ΛU
+  (term
+   ((λ (f) (f (queue)))
+    (mon ctc serv client
+         (tr (λ (tr-var) (seqn (add! tr-var false)
+                               true))
+             (λ (coll) (coll ->i (λ (in) (λ (out) (tt? out)))))
+             (λ (trace-addr) true))
+         (λ (addr) (null? (tail addr)))))))
+ (term true))
+
+(test-equal
+ (eval-ΛU
+  (term
+   (null? (tail ((λ (f) (f (queue)))
+                 (mon ctc serv client
+                      (tr (λ (tr-var) (seqn (add! tr-var false)
+                                            true))
+                          (λ (coll) (coll ->i (λ (in) true)))
+                          (λ (trace-addr) true))
+                      (λ (addr) addr)))))))
+ (term true))
 
 
 ;; =============================================================================
